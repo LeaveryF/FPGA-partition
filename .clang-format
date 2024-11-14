@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM
+
+AllowShortFunctionsOnASingleLine: Empty
+AlignAfterOpenBracket: AlwaysBreak
+AlignTrailingComments: false
