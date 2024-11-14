@@ -18,9 +18,9 @@ typedef enum {
   NULLPTR_PARTITION
 } mt_kahypar_partition_type_t;
 
-struct mt_kahypar_context_s;
+struct mt_kahypar_context_s; // 上下文
 typedef struct mt_kahypar_context_s mt_kahypar_context_t;
-struct mt_kahypar_target_graph_s;
+struct mt_kahypar_target_graph_s; // 目标图
 typedef struct mt_kahypar_target_graph_s mt_kahypar_target_graph_t;
 
 struct mt_kahypar_hypergraph_s;
@@ -56,38 +56,50 @@ typedef int mt_kahypar_partition_id_t;
  */
 typedef enum {
   // number of blocks of the partition
+  // 分区块数
   NUM_BLOCKS,
   // imbalance factor
+  // 不平衡因子
   EPSILON,
   // objective function (either 'cut' or 'km1')
+  // 目标函数
   OBJECTIVE,
   // number of V-cycles
+  // V-cycle轮数
   NUM_VCYCLES,
   // disables or enables logging
+  // 是否启用日志
   VERBOSE
 } mt_kahypar_context_parameter_type_t;
 
 /**
  * Supported objective functions.
+ * 目标函数
  */
 typedef enum { CUT, KM1, SOED } mt_kahypar_objective_t;
 
 /**
  * Preset types for partitioning context.
+ * 分区上下文的预设类型
  */
 typedef enum {
   // deterministic partitioning mode (corresponds to Mt-KaHyPar-SDet)
+  // 确定性分区
   DETERMINISTIC,
   // partitioning mode for partitioning a (hyper)graph into a large number of
   // blocks
+  // 大K分区
   LARGE_K,
   // computes good partitions very fast (corresponds to Mt-KaHyPar-D)
+  // 默认
   DEFAULT,
   // extends default preset with flow-based refinement
   // -> computes high-quality partitions (corresponds to Mt-KaHyPar-D-F)
+  // 质量
   QUALITY,
   // n-level code with flow-based refinement
   // => highest quality configuration (corresponds to Mt-KaHyPar-Q-F)
+  // 最高质量
   HIGHEST_QUALITY
 } mt_kahypar_preset_type_t;
 
@@ -96,8 +108,10 @@ typedef enum {
  */
 typedef enum {
   // Standard file format for graphs
+  // 普通图
   METIS,
   // Standard file format for hypergraphs
+  // 超图
   HMETIS
 } mt_kahypar_file_format_type_t;
 

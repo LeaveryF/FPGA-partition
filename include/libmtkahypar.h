@@ -39,31 +39,33 @@ extern "C" {
 
 /**
  * Creates a new empty partitioning context object.
+ * 新建一个空的分区上下文对象
  */
 MT_KAHYPAR_API mt_kahypar_context_t *mt_kahypar_context_new();
 
 /**
  * Deletes the partitioning context object.
+ * 删除分区上下文对象
  */
 MT_KAHYPAR_API void mt_kahypar_free_context(mt_kahypar_context_t *context);
 
 /**
  * Loads a partitioning context from a configuration file.
+ * 从配置文件中加载分区上下文
  */
 MT_KAHYPAR_API void mt_kahypar_configure_context_from_file(
     mt_kahypar_context_t *context, const char *ini_file_name);
 
 /**
  * Loads a partitioning context of a predefined preset type.
- * Possible preset types are DETERMINISTIC (corresponds to Mt-KaHyPar-SDet),
- * SPEED (corresponds to Mt-KaHyPar-D) and HIGH_QUALITY (corresponds to
- * Mt-KaHyPar-D-F)
+ * 从预定义的预设类型中加载分区上下文
  */
 MT_KAHYPAR_API void mt_kahypar_load_preset(
     mt_kahypar_context_t *context, const mt_kahypar_preset_type_t preset);
 
 /**
  * Sets a new value for a context parameter.
+ * 设置上下文参数的新值
  *
  * Usage:
  * mt_kahypar_set_context_parameter(context, OBJECTIVE, "km1") // sets the
@@ -79,6 +81,12 @@ MT_KAHYPAR_API int mt_kahypar_set_context_parameter(
 
 /**
  * Sets all required parameters for a partitioning call.
+ * 设置分区调用的所有必需参数
+ *
+ * \param context 分区上下文
+ * \param num_blocks 分区块数
+ * \param epsilon 贪婪算法的平衡因子
+ * \param objective 目标函数
  */
 MT_KAHYPAR_API void mt_kahypar_set_partitioning_parameters(
     mt_kahypar_context_t *context, const mt_kahypar_partition_id_t num_blocks,
@@ -87,6 +95,7 @@ MT_KAHYPAR_API void mt_kahypar_set_partitioning_parameters(
 /**
  * Initializes the random number generator with the given seed value (not
  * thread-safe).
+ * 使用给定的种子值初始化随机数生成器（非线程安全）
  */
 MT_KAHYPAR_API void mt_kahypar_set_seed(const size_t seed);
 
@@ -94,6 +103,7 @@ MT_KAHYPAR_API void mt_kahypar_set_seed(const size_t seed);
  * Sets individual target block weights for each block of the partition.
  * A balanced partition then satisfies that the weight of each block is smaller
  * or equal than the defined target block weight for the corresponding block.
+ * 设定每个分区的块的目标块权重
  */
 MT_KAHYPAR_API void mt_kahypar_set_individual_target_block_weights(
     mt_kahypar_context_t *context, const mt_kahypar_partition_id_t num_blocks,
@@ -101,6 +111,9 @@ MT_KAHYPAR_API void mt_kahypar_set_individual_target_block_weights(
 
 // ####################### Thread Pool Initialization #######################
 
+/**
+ * 初始化线程池
+ */
 MT_KAHYPAR_API void mt_kahypar_initialize_thread_pool(
     const size_t num_threads, const bool interleaved_allocations);
 
