@@ -25,23 +25,23 @@ typedef struct mt_kahypar_target_graph_s mt_kahypar_target_graph_t;
 
 struct mt_kahypar_hypergraph_s;
 typedef struct {
-  mt_kahypar_hypergraph_s* hypergraph;
+  mt_kahypar_hypergraph_s *hypergraph;
   mt_kahypar_hypergraph_type_t type;
 } mt_kahypar_hypergraph_t;
 
 typedef struct {
-  const mt_kahypar_hypergraph_s* hypergraph;
+  const mt_kahypar_hypergraph_s *hypergraph;
   mt_kahypar_hypergraph_type_t type;
 } mt_kahypar_hypergraph_const_t;
 
 struct mt_kahypar_partitioned_hypergraph_s;
 typedef struct {
-  mt_kahypar_partitioned_hypergraph_s* partitioned_hg;
+  mt_kahypar_partitioned_hypergraph_s *partitioned_hg;
   mt_kahypar_partition_type_t type;
 } mt_kahypar_partitioned_hypergraph_t;
 
 typedef struct {
-  const mt_kahypar_partitioned_hypergraph_s* partitioned_hg;
+  const mt_kahypar_partitioned_hypergraph_s *partitioned_hg;
   mt_kahypar_partition_type_t type;
 } mt_kahypar_partitioned_hypergraph_const_t;
 
@@ -70,11 +70,7 @@ typedef enum {
 /**
  * Supported objective functions.
  */
-typedef enum {
-  CUT,
-  KM1,
-  SOED
-} mt_kahypar_objective_t;
+typedef enum { CUT, KM1, SOED } mt_kahypar_objective_t;
 
 /**
  * Preset types for partitioning context.
@@ -82,7 +78,8 @@ typedef enum {
 typedef enum {
   // deterministic partitioning mode (corresponds to Mt-KaHyPar-SDet)
   DETERMINISTIC,
-  // partitioning mode for partitioning a (hyper)graph into a large number of blocks
+  // partitioning mode for partitioning a (hyper)graph into a large number of
+  // blocks
   LARGE_K,
   // computes good partitions very fast (corresponds to Mt-KaHyPar-D)
   DEFAULT,
@@ -105,11 +102,11 @@ typedef enum {
 } mt_kahypar_file_format_type_t;
 
 #ifndef MT_KAHYPAR_API
-#   if __GNUC__ >= 4
-#       define MT_KAHYPAR_API __attribute__ ((visibility("default")))
-#   else
-#       define MT_KAHYPAR_API
-#   endif
+#if __GNUC__ >= 4
+#define MT_KAHYPAR_API __attribute__((visibility("default")))
+#else
+#define MT_KAHYPAR_API
+#endif
 #endif
 
 #endif // TYPEDEFS_H
