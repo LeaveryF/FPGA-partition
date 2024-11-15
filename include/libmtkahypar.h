@@ -122,6 +122,7 @@ MT_KAHYPAR_API void mt_kahypar_initialize_thread_pool(
 /**
  * Reads a (hyper)graph from a file for a given configuration (preset).
  * The file can be either in hMetis or Metis file format.
+ * 从文件中读取给定配置(预设)的超图
  *
  * \note Note that we use different (hyper)graph data structures for different
  * configurations. Make sure that you partition the hypergraph with the same
@@ -134,6 +135,7 @@ MT_KAHYPAR_API mt_kahypar_hypergraph_t mt_kahypar_read_hypergraph_from_file(
 /**
  * Reads a target graph in Metis file format. The target graph can be used in
  * the 'mt_kahypar_map' function to map a (hyper)graph onto it.
+ * 读取Metis文件格式的目标图
  */
 MT_KAHYPAR_API mt_kahypar_target_graph_t *
 mt_kahypar_read_target_graph_from_file(const char *file_name);
@@ -141,6 +143,7 @@ mt_kahypar_read_target_graph_from_file(const char *file_name);
 /**
  * Constructs a hypergraph from a given adjacency array that specifies the
  * hyperedges.
+ * 构造超图
  *
  * For example:
  * hyperedge_indices: | 0   | 2       | 6     | 9     | 12
@@ -153,16 +156,17 @@ mt_kahypar_read_target_graph_from_file(const char *file_name);
  * of this function are no longer needed and can be deleted.
  */
 MT_KAHYPAR_API mt_kahypar_hypergraph_t mt_kahypar_create_hypergraph(
-    mt_kahypar_preset_type_t preset,
-    const mt_kahypar_hypernode_id_t num_vertices,
-    const mt_kahypar_hyperedge_id_t num_hyperedges,
-    const size_t *hyperedge_indices,
-    const mt_kahypar_hyperedge_id_t *hyperedges,
-    const mt_kahypar_hyperedge_weight_t *hyperedge_weights,
-    const mt_kahypar_hypernode_weight_t *vertex_weights);
+    mt_kahypar_preset_type_t preset, // 预设类型
+    const mt_kahypar_hypernode_id_t num_vertices, // 结点数
+    const mt_kahypar_hyperedge_id_t num_hyperedges, // 超边数
+    const size_t *hyperedge_indices, // 超边索引数组 length = num_vertices
+    const mt_kahypar_hyperedge_id_t *hyperedges, // 超边数组 length = num_pins
+    const mt_kahypar_hyperedge_weight_t *hyperedge_weights, // 超边权重数组
+    const mt_kahypar_hypernode_weight_t *vertex_weights); // 节点权重数组
 
 /**
  * Constructs a graph from a given edge list vector.
+ * 构造图
  *
  * Example:
  * edges:        | 0 2 | 0 1 | 2 3 | 1 3 |
@@ -174,15 +178,17 @@ MT_KAHYPAR_API mt_kahypar_hypergraph_t mt_kahypar_create_hypergraph(
  * are no longer needed and can be deleted.
  */
 MT_KAHYPAR_API mt_kahypar_hypergraph_t mt_kahypar_create_graph(
-    const mt_kahypar_preset_type_t preset,
-    const mt_kahypar_hypernode_id_t num_vertices,
-    const mt_kahypar_hyperedge_id_t num_edges,
-    const mt_kahypar_hypernode_id_t *edges,
-    const mt_kahypar_hyperedge_weight_t *edge_weights,
-    const mt_kahypar_hypernode_weight_t *vertex_weights);
+    const mt_kahypar_preset_type_t preset, // 预设类型
+    const mt_kahypar_hypernode_id_t num_vertices, // 结点数
+    const mt_kahypar_hyperedge_id_t num_edges, // 边数
+    const mt_kahypar_hypernode_id_t *edges, // 边数组 length = num_edges * 2
+    const mt_kahypar_hyperedge_weight_t *edge_weights, // 边权重数组
+    const mt_kahypar_hypernode_weight_t *vertex_weights); // 节点权重数组
+
 /**
  * Constructs a target graph from a given edge list vector. The target graph can
  * be used in the 'mt_kahypar_map' function to map a (hyper)graph onto it.
+ * 构造目标图
  *
  * Example:
  * edges:        | 0 2 | 0 1 | 2 3 | 1 3 |
@@ -201,36 +207,42 @@ MT_KAHYPAR_API mt_kahypar_target_graph_t *mt_kahypar_create_target_graph(
 
 /**
  * Deletes the (hyper)graph object.
+ * 删除超图对象
  */
 MT_KAHYPAR_API void
 mt_kahypar_free_hypergraph(mt_kahypar_hypergraph_t hypergraph);
 
 /**
  * Deletes a target graph object.
+ * 删除目标图对象
  */
 MT_KAHYPAR_API void
 mt_kahypar_free_target_graph(mt_kahypar_target_graph_t *target_graph);
 
 /**
  * Returns the number of nodes of the (hyper)graph.
+ * 返回超图的节点数
  */
 MT_KAHYPAR_API mt_kahypar_hypernode_id_t
 mt_kahypar_num_hypernodes(mt_kahypar_hypergraph_t hypergraph);
 
 /**
  * Returns the number of (hyper)edges of the (hyper)graph.
+ * 返回超图中的超边数
  */
 MT_KAHYPAR_API mt_kahypar_hyperedge_id_t
 mt_kahypar_num_hyperedges(mt_kahypar_hypergraph_t hypergraph);
 
 /**
  * Returns the number of pins of the hypergraph.
+ * 返回超图的引脚数
  */
 MT_KAHYPAR_API mt_kahypar_hypernode_id_t
 mt_kahypar_num_pins(mt_kahypar_hypergraph_t hypergraph);
 
 /**
  * Returns the sum of all node weights of the (hyper)graph.
+ * 返回超图中所有节点权重的和
  */
 MT_KAHYPAR_API mt_kahypar_hypernode_id_t
 mt_kahypar_hypergraph_weight(mt_kahypar_hypergraph_t hypergraph);
@@ -276,6 +288,7 @@ mt_kahypar_remove_fixed_vertices(mt_kahypar_hypergraph_t hypergraph);
 /**
  * Checks whether or not the given hypergraph can be partitioned with the
  * corresponding preset.
+ * 检查给定的超图是否可以用相应的预设进行划分
  */
 MT_KAHYPAR_API bool mt_kahypar_check_compatibility(
     mt_kahypar_hypergraph_t hypergraph, mt_kahypar_preset_type_t preset);
@@ -283,6 +296,7 @@ MT_KAHYPAR_API bool mt_kahypar_check_compatibility(
 /**
  * Partitions a (hyper)graph with the configuration specified in the
  * partitioning context.
+ * 使用分区上下文中的配置划分超图
  *
  * \note Before partitioning, the number of blocks, imbalance parameter and
  * objective function must be set in the partitioning context. This can be done
@@ -303,6 +317,7 @@ MT_KAHYPAR_API mt_kahypar_partitioned_hypergraph_t mt_kahypar_partition(
  * objective function is able to acurately model wire-lengths in VLSI design or
  * communication costs in a distributed system where some processors do not
  * communicate directly with each other or different speeds.
+ * 将超图映射到图
  *
  * \note Since computing Steiner trees is an NP-hard problem, we currently
  * restrict the size of the target graph to at most 64 nodes. If you want to map
@@ -319,6 +334,7 @@ MT_KAHYPAR_API mt_kahypar_partitioned_hypergraph_t mt_kahypar_map(
 /**
  * Checks whether or not the given partitioned hypergraph can
  * be improved with the corresponding preset.
+ * 检查给定的分区超图是否可以用相应的预设进行改进
  */
 MT_KAHYPAR_API bool mt_kahypar_check_partition_compatibility(
     mt_kahypar_partitioned_hypergraph_t partitioned_hg,
@@ -326,6 +342,7 @@ MT_KAHYPAR_API bool mt_kahypar_check_partition_compatibility(
 
 /**
  * Improves a given partition (using the V-cycle technique).
+ * 使用V-cycle技术改进给定的分区
  *
  * \note The number of blocks specified in the partitioning context must be
  * equal to the number of blocks of the given partition. \note There is no
@@ -337,6 +354,7 @@ MT_KAHYPAR_API void mt_kahypar_improve_partition(
 
 /**
  * Improves a given mapping (using the V-cycle technique).
+ * 使用V-cycle技术改进给定的映射
  *
  * \note The number of nodes of the target graph must be equal to the
  *       number of blocks of the given partition.
@@ -349,6 +367,7 @@ MT_KAHYPAR_API void mt_kahypar_improve_mapping(
 
 /**
  * Constructs a partitioned (hyper)graph out of the given partition.
+ * 从给定的分区构造一个分区超图
  */
 MT_KAHYPAR_API mt_kahypar_partitioned_hypergraph_t
 mt_kahypar_create_partitioned_hypergraph(
@@ -358,6 +377,7 @@ mt_kahypar_create_partitioned_hypergraph(
 
 /**
  * Constructs a partitioned (hyper)graph from a given partition file.
+ * 从给定的分区文件构造一个分区超图
  */
 MT_KAHYPAR_API mt_kahypar_partitioned_hypergraph_t
 mt_kahypar_read_partition_from_file(
@@ -366,6 +386,7 @@ mt_kahypar_read_partition_from_file(
 
 /**
  * Writes a partition to a file.
+ * 将分区写入文件
  */
 MT_KAHYPAR_API void mt_kahypar_write_partition_to_file(
     const mt_kahypar_partitioned_hypergraph_t partitioned_hg,
@@ -373,6 +394,7 @@ MT_KAHYPAR_API void mt_kahypar_write_partition_to_file(
 
 /**
  * Extracts a partition from a partitioned (hyper)graph.
+ * 从分区超图中提取分区
  */
 MT_KAHYPAR_API void mt_kahypar_get_partition(
     const mt_kahypar_partitioned_hypergraph_t partitioned_hg,
@@ -380,12 +402,15 @@ MT_KAHYPAR_API void mt_kahypar_get_partition(
 
 /**
  * Extracts the weight of each block from a partition.
+ * 从分区中提取每个块的权重
  */
 MT_KAHYPAR_API void mt_kahypar_get_block_weights(
     const mt_kahypar_partitioned_hypergraph_t partitioned_hg,
     mt_kahypar_hypernode_weight_t *block_weights);
+
 /**
  * Computes the imbalance of the partition.
+ * 计算分区的不平衡度
  */
 MT_KAHYPAR_API double mt_kahypar_imbalance(
     const mt_kahypar_partitioned_hypergraph_t partitioned_hg,
@@ -393,24 +418,28 @@ MT_KAHYPAR_API double mt_kahypar_imbalance(
 
 /**
  * Computes the cut metric.
+ * 计算割边指标
  */
 MT_KAHYPAR_API mt_kahypar_hyperedge_weight_t
 mt_kahypar_cut(const mt_kahypar_partitioned_hypergraph_t partitioned_hg);
 
 /**
  * Computes the connectivity metric.
+ * 计算连通性指标
  */
 MT_KAHYPAR_API mt_kahypar_hyperedge_weight_t
 mt_kahypar_km1(const mt_kahypar_partitioned_hypergraph_t partitioned_hg);
 
 /**
  * Computes the sum-of-external-degree metric.
+ * 计算外部度之和指标
  */
 MT_KAHYPAR_API mt_kahypar_hyperedge_weight_t
 mt_kahypar_soed(const mt_kahypar_partitioned_hypergraph_t partitioned_hg);
 
 /**
  * Computes the steiner tree metric.
+ * 计算Steiner树指标
  */
 MT_KAHYPAR_API mt_kahypar_hyperedge_weight_t mt_kahypar_steiner_tree(
     const mt_kahypar_partitioned_hypergraph_t partitioned_hg,
@@ -418,6 +447,7 @@ MT_KAHYPAR_API mt_kahypar_hyperedge_weight_t mt_kahypar_steiner_tree(
 
 /**
  * Deletes the partitioned (hyper)graph object.
+ * 删除分区超图对象
  */
 MT_KAHYPAR_API void mt_kahypar_free_partitioned_hypergraph(
     mt_kahypar_partitioned_hypergraph_t partitioned_hg);

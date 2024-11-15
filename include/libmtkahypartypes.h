@@ -7,7 +7,7 @@ typedef enum {
   STATIC_HYPERGRAPH,
   DYNAMIC_HYPERGRAPH,
   NULLPTR_HYPERGRAPH
-} mt_kahypar_hypergraph_type_t;
+} mt_kahypar_hypergraph_type_t; // 超图类型
 
 typedef enum {
   MULTILEVEL_GRAPH_PARTITIONING,
@@ -16,7 +16,7 @@ typedef enum {
   N_LEVEL_HYPERGRAPH_PARTITIONING,
   LARGE_K_PARTITIONING,
   NULLPTR_PARTITION
-} mt_kahypar_partition_type_t;
+} mt_kahypar_partition_type_t; // 分区类型
 
 struct mt_kahypar_context_s; // 上下文
 typedef struct mt_kahypar_context_s mt_kahypar_context_t;
@@ -27,32 +27,33 @@ struct mt_kahypar_hypergraph_s;
 typedef struct {
   mt_kahypar_hypergraph_s *hypergraph;
   mt_kahypar_hypergraph_type_t type;
-} mt_kahypar_hypergraph_t;
+} mt_kahypar_hypergraph_t; // 超图
 
 typedef struct {
   const mt_kahypar_hypergraph_s *hypergraph;
   mt_kahypar_hypergraph_type_t type;
-} mt_kahypar_hypergraph_const_t;
+} mt_kahypar_hypergraph_const_t; // 常量超图
 
 struct mt_kahypar_partitioned_hypergraph_s;
 typedef struct {
   mt_kahypar_partitioned_hypergraph_s *partitioned_hg;
   mt_kahypar_partition_type_t type;
-} mt_kahypar_partitioned_hypergraph_t;
+} mt_kahypar_partitioned_hypergraph_t; // 分区超图
 
 typedef struct {
   const mt_kahypar_partitioned_hypergraph_s *partitioned_hg;
   mt_kahypar_partition_type_t type;
-} mt_kahypar_partitioned_hypergraph_const_t;
+} mt_kahypar_partitioned_hypergraph_const_t; // 常量分区超图
 
-typedef unsigned long int mt_kahypar_hypernode_id_t;
-typedef unsigned long int mt_kahypar_hyperedge_id_t;
-typedef int mt_kahypar_hypernode_weight_t;
-typedef int mt_kahypar_hyperedge_weight_t;
-typedef int mt_kahypar_partition_id_t;
+typedef unsigned long int mt_kahypar_hypernode_id_t; // 结点
+typedef unsigned long int mt_kahypar_hyperedge_id_t; // 超边
+typedef int mt_kahypar_hypernode_weight_t; // 点权
+typedef int mt_kahypar_hyperedge_weight_t; // 边权
+typedef int mt_kahypar_partition_id_t; // 分区
 
 /**
  * Configurable parameters of the partitioning context.
+ * 分区上下文的可配置参数
  */
 typedef enum {
   // number of blocks of the partition
@@ -105,6 +106,7 @@ typedef enum {
 
 /**
  * Supported (hyper)graph file formats.
+ * 图文件格式
  */
 typedef enum {
   // Standard file format for graphs
