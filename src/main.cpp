@@ -1,78 +1,34 @@
-#include <iostream>
-#include <memory>
-#include <thread>
-#include <vector>
+#include <chrono>
+#include <unordered_map>
 
-#include <libmtkahypar.h>
+#include "io.h"
+#include "util.h"
 
-// Install library interface via 'sudo make install.mtkahypar' in build folder
-// Compile with: g++ -std=c++14 -DNDEBUG -O3 construct_graph.cc -o example
-// -lmtkahypar
 int main(int argc, char *argv[]) {
+  const auto startTotal = std::chrono::high_resolution_clock::now();
 
-  // Initialize thread pool
-  mt_kahypar_initialize_thread_pool(
-      std::thread::hardware_concurrency() /* use all available cores */,
-      true /* activate interleaved NUMA allocation policy */);
+  // 处理命令行参数
+  const auto &[input_dir, output_file] = util::parse_cmd_options(argc, argv);
 
-  // In the following, we construct a graph with 5 nodes and 6 edges
-  const mt_kahypar_hypernode_id_t num_nodes = 5;
-  const mt_kahypar_hyperedge_id_t num_edges = 6;
+  Graph finest;
+  FPGA fpgas;
+  IOSystem io_system;
+  std::unordered_map<std::string, int> fpga_map, node_map;
+  std::unordered_map<int, std::string> fpga_reverse_map, node_reverse_map;
+  io_system.read_input_dir(
+      input_dir, finest, fpgas, fpga_map, node_map, fpga_reverse_map,
+      node_reverse_map);
 
-  // We represent the edges of the graph as edge list vector.
-  // Two consecutive node IDs in the edge list vector form
-  // an undirected edge in the graph.
-  std::unique_ptr<mt_kahypar_hypernode_id_t[]> edges =
-      std::make_unique<mt_kahypar_hypernode_id_t[]>(12);
-  // The first undirected edge connects node 0 and 1
-  edges[0] = 0;
-  edges[1] = 1;
-  // The second undirected edge connects node 0 and 2
-  edges[2] = 0;
-  edges[3] = 2;
-  // The third undirected edge connects node 1 and 2
-  edges[4] = 1;
-  edges[5] = 2;
-  // The fourth undirected edge connects node 1 and 3
-  edges[6] = 1;
-  edges[7] = 3;
-  // The fifth undirected edge connects node 2 and 3
-  edges[8] = 2;
-  edges[9] = 3;
-  // The sixth undirected edge connects node 3 and 4
-  edges[10] = 3;
-  edges[11] = 4;
+  std::vector<int> parts(finest.nodes.size()); // 划分结果
 
-  // Define node weights
-  std::unique_ptr<mt_kahypar_hypernode_weight_t[]> node_weights =
-      std::make_unique<mt_kahypar_hypernode_weight_t[]>(5);
-  node_weights[0] = 2;
-  node_weights[1] = 1;
-  node_weights[2] = 2;
-  node_weights[3] = 4;
-  node_weights[4] = 1;
+  // 输出
+  io_system.write_design_fpga_out(
+      output_file, parts, fpga_reverse_map, node_reverse_map);
 
-  // Define edge weights
-  std::unique_ptr<mt_kahypar_hyperedge_weight_t[]> edge_weights =
-      std::make_unique<mt_kahypar_hyperedge_weight_t[]>(6);
-  edge_weights[0] = 1;
-  edge_weights[1] = 10;
-  edge_weights[2] = 1;
-  edge_weights[3] = 10;
-  edge_weights[3] = 1;
-  edge_weights[4] = 10;
+  // 运行性能信息统计输出
+  util::printPeakMem();
+  const auto endTotal = std::chrono::high_resolution_clock::now();
+  util::printTime(startTotal, endTotal);
 
-  // Construct graph
-  mt_kahypar_hypergraph_t graph = mt_kahypar_create_graph(
-      DEFAULT, num_nodes, num_edges, edges.get(), edge_weights.get(),
-      node_weights.get());
-
-  std::cout << "Number of Nodes       = " << mt_kahypar_num_hypernodes(graph)
-            << std::endl;
-  std::cout << "Number of Edges       = " << mt_kahypar_num_hyperedges(graph)
-            << std::endl;
-  std::cout << "Total Weight of Graph = " << mt_kahypar_hypergraph_weight(graph)
-            << std::endl;
-
-  mt_kahypar_free_hypergraph(graph);
+  return 0;
 }
