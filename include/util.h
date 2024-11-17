@@ -51,7 +51,7 @@ public:
   int max_interconnects; // 最大对外互连数(该fpga的割边权重)
 };
 
-class util {
+class Util {
 public:
   static std::pair<std::string, std::string>
   parse_cmd_options(int argc, char *argv[]) {
