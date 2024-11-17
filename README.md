@@ -35,7 +35,12 @@ cd build/bin/ # 切换到可执行文件目录下
   },
 ```
 
-运行时可能需要将bin/MtKaHypar拷贝到build/bin/目录下
+运行时可能需要将bin/MtKaHypar拷贝到build/bin/目录下  
+借助mtkahypar有两种方式 一种是使用mt提供的lib接口 另一种是直接使用mt可执行文件  
+由于目前mt的lib接口存在一些问题  
+即不能保证优化指标为steiner_tree时 划分的确定性  
+所以暂时使用mt可执行文件  
+同时为避免参数的混乱 mt的参数暂写死在源文件中
 
 ## 项目结构
 
