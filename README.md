@@ -37,25 +37,28 @@ cd build/bin/ # 切换到可执行文件目录下
 
 ## 项目结构
 
-1. build/: 构建目录 由cmake生成
+1. bin/: 二进制文件
+- 是项目需要用到的二进制文件 目前只包含MtKaHyPar
+
+2. build/: 构建目录 由cmake生成
 - build/bin/: 存放生成的二进制文件
 
-2. config/: mtkahypar的配置文件
+3. config/: mtkahypar的配置文件
 
-3. data/: 公开的测试数据
+4. data/: 公开的测试数据
 
-4. etc/: 赛题服务器提供的其他资源
+5. etc/: 赛题服务器提供的其他资源
 
-5. examples/: mtkahypar的示例代码及测试数据
+6. examples/: mtkahypar的示例代码及测试数据
 
-6. include/: 头文件
+7. include/: 头文件
 - libmtkahypar.h: mtkahypar库的头文件
 - libmtkahypartypes.h: mtkahypar类型的头文件
 
-7. lib/: 外部库
+8. lib/: 外部库
 - 目前只包含libmtkahypar.so
 
-8. scripts/: 脚本文件  
+9. scripts/: 脚本文件  
 - scripts/evaluate.sh:  
 运行评估器evaluator  
 需在build/bin/目录下运行  
@@ -80,7 +83,7 @@ cd build/bin/ # 切换到可执行文件目录下
 如需更新evaluator可运行此脚本  
 也可以下载服务器上的其他文件  
 
-9. src/: 源文件
+10. src/: 源文件
 
 ## 赛题服务器相关说明
 
@@ -101,7 +104,7 @@ evaluator在:
 testcase在:  
 /home/public/testcase/  
 
-可执行文件依赖于 libmtkahypar.so 外部库  
+可执行文件依赖于 libmtkahypar.so 外部库 以及 MtKaHyPar 二进制文件  
 已上传至赛题服务器的~/submission/bin/目录  
 评测时会将~/submission/bin/加到环境变量  
 自测时通过export模拟(已经写在服务器上的~/submission/bin/run.sh脚本中)  
