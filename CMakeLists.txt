@@ -10,6 +10,7 @@ file(GLOB SOURCES ${CMAKE_SOURCE_DIR}/src/*.cpp)
 
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
-add_executable(partitioner ${SOURCES})
+# add_executable(partitioner ${SOURCES})
+add_executable(partitioner ${CMAKE_SOURCE_DIR}/examples/map_hypergraph_onto_target_graph.cc)
 
 target_link_libraries(partitioner mtkahypar)
