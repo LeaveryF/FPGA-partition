@@ -35,6 +35,8 @@ cd build/bin/ # 切换到可执行文件目录下
   },
 ```
 
+运行时可能需要将bin/MtKaHypar拷贝到build/bin/目录下
+
 ## 项目结构
 
 1. bin/: 二进制文件
@@ -64,6 +66,10 @@ cd build/bin/ # 切换到可执行文件目录下
 需在build/bin/目录下运行  
 使用-t参数指定测试数据路径 使用-s参数指定输出的design.fpga.out文件路径  
 其功能是评估design.fpga.out结果是否合法  
+
+- scripts/run_mt.sh:
+运行可执行文件bin/MtKaHyPar  
+需在build/bin/目录下运行  
 
 - scripts/run.sh:  
 运行项目生成的可执行文件partitioner  
