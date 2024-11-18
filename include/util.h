@@ -34,6 +34,9 @@ public:
   std::vector<Node> nodes; // 节点
   std::vector<Net> nets; // 超边
   std::vector<std::vector<int>> incident_edges; // 每个结点关联的所有超边
+
+  int pin_size; // 引脚数
+  Eigen::VectorXi required_res; // 总耗费资源
 };
 
 // 所有fpga
@@ -42,6 +45,9 @@ public:
   int size; // fpga个数
   std::vector<Eigen::VectorXi> resources; // 资源
   std::vector<std::vector<int>> topology; // 拓扑 // 取值0/1
+
+  Eigen::VectorXi total_res; // 总资源
+  Eigen::VectorXi lower_res; // 资源下界
 
   std::vector<int> max_dist; // 每个fpga到其他fpga的最大距离 // 仅用于求s_hat
   std::vector<std::vector<int>> dist; // 距离矩阵

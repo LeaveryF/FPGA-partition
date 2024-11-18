@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -29,6 +30,14 @@ public:
         input_dir + "/design.are", finest, node_map, node_reverse_map);
     read_design_net(input_dir + "/design.net", finest, node_map);
     read_design_topo(input_dir + "/design.topo", fpgas, fpga_map);
+
+    // some info
+    std::cout << "Ratio: ";
+    for (int i = 0; i < 8; i++) {
+      std::cout << finest.required_res[i] / fpgas.total_res[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
+
     std::cout << "Finish reading input files." << std::endl << std::endl;
   }
 
@@ -76,7 +85,11 @@ private:
     }
 
     std::string line;
-    Eigen::VectorXi tmp = Eigen::VectorXi::Zero(8);
+    fpgas.total_res.resize(8);
+    fpgas.total_res = Eigen::VectorXi::Zero(8);
+    fpgas.lower_res.resize(8);
+    fpgas.lower_res =
+        Eigen::VectorXi::Constant(8, std::numeric_limits<int>::max());
     fpgas.size = 0; // init
     while (getline(file, line)) {
       std::stringstream ss(line);
@@ -87,20 +100,28 @@ private:
       fpga_map[name] = fpgas.size++; // name -> num  start from 0!
       fpgas.max_interconnects = max_interconnects; // 最大对外互联数
 
-      Eigen::VectorXi max_resources = Eigen::VectorXi::Zero(8);
+      Eigen::VectorXi res = Eigen::VectorXi::Zero(8);
       for (int i = 0; i < 8; ++i) {
-        ss >> max_resources[i]; // 8种资源
+        ss >> res[i]; // 8种资源
       }
-      tmp += max_resources;
+      fpgas.total_res += res;
+      for (int i = 0; i < 8; i++) { // maybe it can use func in eigen
+        fpgas.lower_res[i] = std::min(fpgas.lower_res[i], res[i]);
+      }
 
-      fpgas.resources.push_back(max_resources); // add to fpgas
+      fpgas.resources.push_back(res); // add to fpgas
     }
     std::cout << "Finish reading design.info file, " << fpgas.size << " fpgas."
               << std::endl;
     std::cout << "Total res: ";
     for (int i = 0; i < 8; i++)
-      std::cout << tmp[i] << ' ';
+      std::cout << fpgas.total_res[i] << ' ';
     std::cout << std::endl << std::endl;
+    std::cout << "Lower res: ";
+    for (int i = 0; i < 8; i++) {
+      std::cout << fpgas.lower_res[i] << ' ';
+    }
+    std::cout << std::endl;
   }
 
   void read_design_are(
@@ -114,7 +135,8 @@ private:
     }
 
     std::string line;
-    Eigen::VectorXi tmp = Eigen::VectorXi::Zero(8);
+    finest.required_res.resize(8);
+    finest.required_res = Eigen::VectorXi::Zero(8);
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string name;
@@ -127,7 +149,7 @@ private:
       for (int i = 0; i < 8; ++i) {
         ss >> node.resources[i]; // 8种资源
       }
-      tmp += node.resources;
+      finest.required_res += node.resources;
 
       finest.nodes.push_back(node); // add to finest
     }
@@ -135,7 +157,7 @@ private:
               << " nodes." << std::endl;
     std::cout << "Required res: ";
     for (int i = 0; i < 8; i++)
-      std::cout << tmp[i] << ' ';
+      std::cout << finest.required_res[i] << ' ';
     std::cout << std::endl << std::endl;
   }
 
@@ -149,8 +171,8 @@ private:
     }
 
     std::string line;
-    int max_k = 0, sum_k = 0, max_u = 0;
-    std::string max_node, max_used;
+    int max_pins = 0, max_used = 0;
+    std::string max_node_name, max_used_name;
     finest.incident_edges.resize(finest.nodes.size());
     while (std::getline(file, line)) {
       std::stringstream ss(line);
@@ -168,26 +190,28 @@ private:
         // 关联边
         finest.incident_edges[node_map.at(dest)].push_back(finest.nets.size());
         // test info about used
-        if (finest.incident_edges[node_map.at(dest)].size() > max_u) {
-          max_used = dest;
-          max_u = finest.incident_edges[node_map.at(dest)].size();
+        if (finest.incident_edges[node_map.at(dest)].size() > max_used) {
+          max_used_name = dest;
+          max_used = finest.incident_edges[node_map.at(dest)].size();
         }
       }
 
       // test info about pins
-      if (net.nodes.size() > max_k) {
-        max_node = src;
-        max_k = net.nodes.size();
+      if (net.nodes.size() > max_pins) {
+        max_node_name = src;
+        max_pins = net.nodes.size();
       }
-      sum_k += net.nodes.size();
+      finest.pin_size += net.nodes.size();
 
       finest.nets.push_back(net); // add to finest
     }
     std::cout << "Finish reading design.net file, " << finest.nets.size()
-              << " nets, " << sum_k << " pins." << std::endl;
-    std::cout << "Max pins: " << max_k << "(" << max_node << "), "
-              << "Ave pins: " << (double)sum_k / finest.nets.size() << std::endl
-              << "Max used: " << max_u << "(" << max_used << ")" << std::endl
+              << " nets, " << finest.pin_size << " pins." << std::endl;
+    std::cout << "Max pins: " << max_pins << "(" << max_node_name << "), "
+              << "Ave pins: " << (double)finest.pin_size / finest.nets.size()
+              << std::endl
+              << "Max used: " << max_used << "(" << max_used_name << ")"
+              << std::endl
               << std::endl;
   }
 
