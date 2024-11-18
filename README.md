@@ -72,7 +72,7 @@ cd build/bin/ # 切换到可执行文件目录下
 使用-t参数指定测试数据路径 使用-s参数指定输出的design.fpga.out文件路径  
 其功能是评估design.fpga.out结果是否合法  
 
-- scripts/run_mt.sh:
+- scripts/mt_run.sh:
 运行可执行文件bin/MtKaHyPar  
 需在build/bin/目录下运行  
 
