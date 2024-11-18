@@ -159,7 +159,7 @@ MT_KAHYPAR_API mt_kahypar_hypergraph_t mt_kahypar_create_hypergraph(
     mt_kahypar_preset_type_t preset, // 预设类型
     const mt_kahypar_hypernode_id_t num_vertices, // 结点数
     const mt_kahypar_hyperedge_id_t num_hyperedges, // 超边数
-    const size_t *hyperedge_indices, // 超边索引数组 length = num_vertices
+    const size_t *hyperedge_indices, // 超边索引数组 length = num_hyperedges+1
     const mt_kahypar_hyperedge_id_t *hyperedges, // 超边数组 length = num_pins
     const mt_kahypar_hyperedge_weight_t *hyperedge_weights, // 超边权重数组
     const mt_kahypar_hypernode_weight_t *vertex_weights); // 节点权重数组
