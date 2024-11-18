@@ -55,7 +55,7 @@ public:
 
     std::vector<std::vector<int>> fpga_assignments(fpga_reverse_map.size());
     for (int i = 0; i < parts.size(); i++) {
-      if (parts[i] >= 0) {
+      if (parts[i] >= 0 && parts[i] < fpga_reverse_map.size()) {
         fpga_assignments[parts[i]].push_back(i);
       } else {
         std::cerr << "Node " << i << "'s part invaild. Partition failed."
