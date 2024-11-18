@@ -17,7 +17,7 @@
 // 结点
 class Node {
 public:
-  int weight; // 点权
+  int weight = 0; // 点权 //
   Eigen::VectorXi resources; // 8种资源
 };
 
@@ -35,16 +35,19 @@ public:
   std::vector<Net> nets; // 超边
   std::vector<std::vector<int>> incident_edges; // 每个结点关联的所有超边
 
-  int pin_size; // 引脚数
+  int pin_size = 0; // 引脚数
   Eigen::VectorXi required_res; // 总耗费资源
 };
 
 // 所有fpga
 class FPGA {
 public:
-  int size; // fpga个数
+  int size = 0; // fpga个数
   std::vector<Eigen::VectorXi> resources; // 资源
   std::vector<std::vector<int>> topology; // 拓扑 // 取值0/1
+
+  int num_edges = 0; // 边数
+  std::vector<int> edges; // 目标图的边
 
   Eigen::VectorXi total_res; // 总资源
   Eigen::VectorXi lower_res; // 资源下界

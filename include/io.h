@@ -90,7 +90,6 @@ private:
     fpgas.lower_res.resize(8);
     fpgas.lower_res =
         Eigen::VectorXi::Constant(8, std::numeric_limits<int>::max());
-    fpgas.size = 0; // init
     while (getline(file, line)) {
       std::stringstream ss(line);
       std::string name;
@@ -148,6 +147,7 @@ private:
       node.resources.resize(8);
       for (int i = 0; i < 8; ++i) {
         ss >> node.resources[i]; // 8种资源
+        node.weight += node.resources[i]; // 点权定义为所有资源的代数和
       }
       finest.required_res += node.resources;
 
@@ -228,9 +228,7 @@ private:
     std::getline(file, line); // Read max hop
     fpgas.max_hops = std::stoi(line);
     fpgas.topology.resize(fpgas.size, std::vector<int>(fpgas.size)); // init
-    int cnt = 0;
     while (getline(file, line)) {
-      cnt++;
       std::stringstream ss(line);
       std::string s1, s2;
       ss >> s1 >> s2; // read topo
@@ -238,6 +236,9 @@ private:
       int id1 = fpga_map.at(s1), id2 = fpga_map.at(s2);
       fpgas.topology[id1][id2] = 1; // attention for undirected graph
       fpgas.topology[id2][id1] = 1;
+      fpgas.edges.push_back(id1);
+      fpgas.edges.push_back(id2);
+      fpgas.num_edges++;
     }
 
     // compute dist, max_dist
@@ -277,8 +278,8 @@ private:
     }
 
     // info
-    std::cout << "Finish reading design.topo file, " << cnt << " arcs."
-              << std::endl;
+    std::cout << "Finish reading design.topo file, " << fpgas.num_edges
+              << " arcs." << std::endl;
     std::cout << "Allowed max hop: " << fpgas.max_hops << std::endl;
     std::cout << "Topo: " << std::endl;
     for (int i = 0; i < fpgas.size; i++) {
