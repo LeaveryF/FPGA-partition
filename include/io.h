@@ -149,8 +149,9 @@ private:
     }
 
     std::string line;
-    int max_k = 0, sum_k = 0;
-    std::string max_node;
+    int max_k = 0, sum_k = 0, max_u = 0;
+    std::string max_node, max_used;
+    finest.incident_edges.resize(finest.nodes.size());
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string src;
@@ -164,9 +165,16 @@ private:
       std::string dest;
       while (ss >> dest) {
         net.nodes.push_back(node_map.at(dest)); // dests
+        // 关联边
+        finest.incident_edges[node_map.at(dest)].push_back(finest.nets.size());
+        // test info about used
+        if (finest.incident_edges[node_map.at(dest)].size() > max_u) {
+          max_used = dest;
+          max_u = finest.incident_edges[node_map.at(dest)].size();
+        }
       }
 
-      // test infomation about pins
+      // test info about pins
       if (net.nodes.size() > max_k) {
         max_node = src;
         max_k = net.nodes.size();
@@ -179,6 +187,7 @@ private:
               << " nets, " << sum_k << " pins." << std::endl;
     std::cout << "Max pins: " << max_k << "(" << max_node << "), "
               << "Ave pins: " << (double)sum_k / finest.nets.size() << std::endl
+              << "Max used: " << max_u << "(" << max_used << ")" << std::endl
               << std::endl;
   }
 

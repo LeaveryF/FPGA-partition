@@ -33,6 +33,7 @@ class Graph {
 public:
   std::vector<Node> nodes; // 节点
   std::vector<Net> nets; // 超边
+  std::vector<std::vector<int>> incident_edges; // 每个结点关联的所有超边
 };
 
 // 所有fpga
