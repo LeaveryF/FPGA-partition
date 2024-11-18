@@ -27,6 +27,7 @@ private:
 
   void init(const Graph &finest, const FPGA &fpgas) {
     // 实际上这样取eps也并不严谨 但至少是动态变化的了
+    this->eps = std::numeric_limits<double>::max();
     Eigen::VectorXd ave_res = finest.required_res.cast<double>() / fpgas.size;
     Eigen::VectorXd res_eps = Eigen::VectorXd::Zero(8);
     for (int i = 0; i < 8; i++) { // 假定每块fpga的8种资源分别差不多

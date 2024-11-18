@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
 #include <queue>
@@ -34,7 +35,8 @@ public:
     // some info
     std::cout << "Ratio: ";
     for (int i = 0; i < 8; i++) {
-      std::cout << finest.required_res[i] / fpgas.total_res[i] << " ";
+      std::cout << (double)finest.required_res[i] * 100 / fpgas.total_res[i]
+                << "% ";
     }
     std::cout << std::endl << std::endl;
 
@@ -115,12 +117,12 @@ private:
     std::cout << "Total res: ";
     for (int i = 0; i < 8; i++)
       std::cout << fpgas.total_res[i] << ' ';
-    std::cout << std::endl << std::endl;
+    std::cout << std::endl;
     std::cout << "Lower res: ";
     for (int i = 0; i < 8; i++) {
       std::cout << fpgas.lower_res[i] << ' ';
     }
-    std::cout << std::endl;
+    std::cout << std::endl << std::endl;
   }
 
   void read_design_are(
@@ -208,8 +210,8 @@ private:
     std::cout << "Finish reading design.net file, " << finest.nets.size()
               << " nets, " << finest.pin_size << " pins." << std::endl;
     std::cout << "Max pins: " << max_pins << "(" << max_node_name << "), "
-              << "Ave pins: " << (double)finest.pin_size / finest.nets.size()
-              << std::endl
+              << "Ave pins: " << std::fixed << std::setprecision(2)
+              << (double)finest.pin_size / finest.nets.size() << std::endl
               << "Max used: " << max_used << "(" << max_used_name << ")"
               << std::endl
               << std::endl;
