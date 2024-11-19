@@ -152,9 +152,10 @@ private:
         // old: 点权定义为所有资源的代数和
         // node.weight += node.resources[i];
         // new: 点权定义为占用比例最大的资源的比例乘以总资源
-        max_ratio = std::max(
-            max_ratio,
-            (double)(node.resources[i] + 1) / (fpga_total_res[i] + 1));
+        if (fpga_total_res[i] != 0) {
+          max_ratio = std::max(
+              max_ratio, (double)node.resources[i] / fpga_total_res[i]);
+        }
       }
       node.weight = max_ratio * total_res;
       finest.required_res += node.resources;
