@@ -46,7 +46,7 @@ cd build/bin/ # 切换到可执行文件目录下
 除此以外 还会在当前目录下生成mt的划分结果mt_results.txt文件  
 如果使用mt的bin 还会在当前目录下生成mt的输入文件mt_input_hypergraph.txt和mt_input_target_graph.txt
 
-使用mt的lib还会出现内存释放错误的问题 可能是内存超限的原因 具体原因未知
+使用mt的lib在case04中还会出现内存释放错误的问题 可能是内存超限的原因 真实原因未知
 
 ## 项目结构
 
