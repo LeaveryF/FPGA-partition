@@ -33,14 +33,6 @@ public:
     read_design_net(input_dir + "/design.net", finest, node_map);
     read_design_topo(input_dir + "/design.topo", fpgas, fpga_map);
 
-    // some info
-    std::cout << "Ratio: ";
-    for (int i = 0; i < 8; i++) {
-      std::cout << (double)finest.required_res[i] * 100 / fpgas.total_res[i]
-                << "% ";
-    }
-    std::cout << std::endl << std::endl;
-
     std::cout << "Finish reading input files." << std::endl << std::endl;
   }
 
@@ -174,6 +166,12 @@ private:
     std::cout << "Required res: ";
     for (int i = 0; i < 8; i++) {
       std::cout << finest.required_res[i] << ' ';
+    }
+    std::cout << std::endl;
+    std::cout << "Ratio: ";
+    for (int i = 0; i < 8; i++) {
+      std::cout << (double)finest.required_res[i] * 100 / fpga_total_res[i]
+                << "% ";
     }
     std::cout << std::endl << std::endl;
   }
