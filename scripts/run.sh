@@ -5,11 +5,13 @@
 if [ ! -z "$1" ]; then
   ./partitioner \
     -t ../../data/case0$1 \
-    -s ./design.fpga.out
+    -s ./design.fpga.out \
+    | tee -a log.txt
 else
   ./partitioner \
     -t ../../data/case02 \
-    -s ./design.fpga.out
+    -s ./design.fpga.out \
+    | tee -a log.txt
 fi
 
 # 赛题服务器运行命令
