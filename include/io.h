@@ -45,12 +45,12 @@ public:
   }
 
   void write_design_fpga_out(
-      const std::string &ouput_file, const std::vector<int> &parts,
+      const std::string &output_file, const std::vector<int> &parts,
       const std::unordered_map<int, std::string> &fpga_reverse_map,
       const std::unordered_map<int, std::string> &node_reverse_map) {
-    std::ofstream fout(ouput_file);
+    std::ofstream fout(output_file);
     if (!fout) {
-      std::cerr << "Cannot write design.fpga.out file." << std::endl;
+      std::cerr << "Cannot write file " << output_file << std::endl;
       exit(1);
     }
 
@@ -72,7 +72,7 @@ public:
       }
       fout << std::endl;
     }
-    std::cout << "Finish writing design.fpga.out file." << std::endl
+    std::cout << "Finish writing file " << output_file << std::endl
               << std::endl;
   }
 
@@ -83,7 +83,7 @@ private:
       std::unordered_map<int, std::string> &fpga_reverse_map) {
     std::ifstream file(file_path);
     if (!file) {
-      std::cerr << "Cannot find design.info file." << std::endl;
+      std::cerr << "Cannot find file " << file_path << std::endl;
       exit(1);
     }
 
@@ -113,8 +113,8 @@ private:
 
       fpgas.resources.push_back(res); // add to fpgas
     }
-    std::cout << "Finish reading design.info file, " << fpgas.size << " fpgas."
-              << std::endl;
+    std::cout << "Finish reading file " << file_path << ", " << fpgas.size
+              << " fpgas." << std::endl;
     std::cout << "Total res: ";
     for (int i = 0; i < 8; i++) {
       std::cout << fpgas.total_res[i] << ' ';
@@ -134,7 +134,7 @@ private:
       const Eigen::VectorXi &fpga_total_res) {
     std::ifstream file(file_path);
     if (!file) {
-      std::cerr << "Cannot find design.are file." << std::endl;
+      std::cerr << "Cannot find file " << file_path << std::endl;
       exit(1);
     }
 
@@ -169,8 +169,8 @@ private:
 
       finest.nodes.push_back(node); // add to finest
     }
-    std::cout << "Finish reading design.are file, " << finest.nodes.size()
-              << " nodes." << std::endl;
+    std::cout << "Finish reading file " << file_path << ", "
+              << finest.nodes.size() << " nodes." << std::endl;
     std::cout << "Required res: ";
     for (int i = 0; i < 8; i++) {
       std::cout << finest.required_res[i] << ' ';
@@ -183,7 +183,7 @@ private:
       const std::unordered_map<std::string, int> &node_map) {
     std::ifstream file(file_path);
     if (!file) {
-      std::cerr << "Cannot find design.net file." << std::endl;
+      std::cerr << "Cannot find file " << file_path << std::endl;
       exit(1);
     }
 
@@ -222,8 +222,9 @@ private:
 
       finest.nets.push_back(net); // add to finest
     }
-    std::cout << "Finish reading design.net file, " << finest.nets.size()
-              << " nets, " << finest.pin_size << " pins." << std::endl;
+    std::cout << "Finish reading file " << file_path << ", "
+              << finest.nets.size() << " nets, " << finest.pin_size << " pins."
+              << std::endl;
     std::cout << "Max pins: " << max_pins << "(" << max_node_name << "), "
               << "Ave pins: " << std::fixed << std::setprecision(2)
               << (double)finest.pin_size / finest.nets.size() << std::endl
@@ -237,7 +238,7 @@ private:
       const std::unordered_map<std::string, int> &fpga_map) {
     std::ifstream file(file_path);
     if (!file) {
-      std::cerr << "Cannot find design.topo file." << std::endl;
+      std::cerr << "Cannot find file " << file_path << std::endl;
       exit(1);
     }
 
@@ -295,7 +296,7 @@ private:
     }
 
     // info
-    std::cout << "Finish reading design.topo file, " << fpgas.num_edges
+    std::cout << "Finish reading file " << file_path << ", " << fpgas.num_edges
               << " arcs." << std::endl;
     std::cout << "Allowed max hop: " << fpgas.max_hops << std::endl;
     std::cout << "Topo: " << std::endl;
