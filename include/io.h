@@ -315,6 +315,6 @@ private:
     for (int i = 0; i < fpgas.size; i++) {
       std::cout << fpgas.max_dist[i] << ' ';
     }
-    std::cout << std::endl;
+    std::cout << std::endl << std::endl;
   }
 };

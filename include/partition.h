@@ -18,6 +18,8 @@ public:
     // mt-kahypar partition
     init(finest, fpgas);
     mt_partition(finest, fpgas, parts);
+
+    std::cout << "Finish partition." << std::endl << std::endl;
   }
 
 private:
@@ -192,7 +194,7 @@ private:
     for (const auto &net : finest.nets) {
       fout << net.weight << ' ';
       for (const auto &node : net.nodes) {
-        fout << node << ' ';
+        fout << node + 1 << ' ';
       }
       fout << std::endl;
     }
@@ -212,7 +214,7 @@ private:
     for (int i = 0; i < fpgas.size; i++) {
       for (int j = 0; j < fpgas.size; j++) {
         if (fpgas.topology[i][j] == 1) {
-          fout << j << ' ' << 1 << ' ';
+          fout << j + 1 << ' ' << 1 << ' ';
         }
       }
       fout << std::endl;
@@ -234,25 +236,22 @@ private:
         << " -v " << this->mt_log
         << " --seed " << this->mt_seed;
     // clang-format on
-    std::cout << "Executing cmd: " << oss.str() << std::endl;
+    std::cout << "Executing cmd: " << oss.str() << std::endl << std::endl;
     if (system(oss.str().c_str()) != 0) {
       exit(1);
     }
-    std::cout << std::endl;
 
     // 重命名输出文件
     oss.str("");
-    oss << "mv `find . -type f -name \"*.KaHyPar\" -printf '%T+ %p\n' "
+    oss << "mv `find . -type f -name \"*.KaHyPar\" -printf '%T+ %p\\n' "
            "| sort -r | head -n 1 | awk '{print $2}'` "
         << this->mt_out_file;
-    std::cout << "Executing cmd: " << oss.str() << std::endl;
+    std::cout << "Executing cmd: " << oss.str() << std::endl << std::endl;
     if (system(oss.str().c_str()) != 0) {
       exit(1);
     }
-    std::cout << std::endl;
 
     // 读取划分结果
-    std::cout << "Reading partition result:" << std::endl;
     std::ifstream fin(this->mt_out_file);
     if (!fin) {
       std::cerr << "Cannot find file " << this->mt_out_file << std::endl;
@@ -261,7 +260,6 @@ private:
     for (int i = 0; i < finest.nodes.size(); i++) {
       fin >> parts[i];
     }
-    std::cout << std::endl;
   }
 
   void mt_partition(
