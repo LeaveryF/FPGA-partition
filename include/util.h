@@ -46,10 +46,11 @@ class FPGA {
 public:
   int size = 0; // fpga个数
   std::vector<Eigen::VectorXi> resources; // 资源
-  std::vector<std::vector<int>> topology; // 拓扑 // 取值0/1
+  std::vector<std::vector<int>> topology; // 拓扑 // 取值0/1 // 邻接矩阵
 
   int num_edges = 0; // 边数
-  std::vector<int> edges; // 目标图的边
+  std::vector<int> edges; // 目标图的边 // for mt lib
+  std::vector<std::vector<int>> graph; // 目标图拓扑 // 邻接表
 
   Eigen::VectorXi total_res; // 总资源
   Eigen::VectorXi lower_res; // 资源下界

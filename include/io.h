@@ -256,6 +256,7 @@ private:
       fpgas.topology[id2][id1] = 1;
       fpgas.edges.push_back(id1);
       fpgas.edges.push_back(id2);
+      fpgas.graph[id1].push_back(id2);
       fpgas.num_edges++;
     }
 
