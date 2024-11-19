@@ -196,6 +196,9 @@ private:
       }
       fout << std::endl;
     }
+    for (const auto &node : finest.nodes) {
+      fout << node.weight << '\n';
+    }
     fout.close();
 
     // 输出metis格式的目标图文件供mt使用
