@@ -103,7 +103,7 @@ private:
       fpgas.max_interconnects = max_interconnects; // 最大对外互联数
 
       Eigen::VectorXi res = Eigen::VectorXi::Zero(8);
-      for (int i = 0; i < 8; ++i) {
+      for (int i = 0; i < 8; i++) {
         ss >> res[i]; // 8种资源
       }
       fpgas.total_res += res;
@@ -116,8 +116,9 @@ private:
     std::cout << "Finish reading design.info file, " << fpgas.size << " fpgas."
               << std::endl;
     std::cout << "Total res: ";
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++) {
       std::cout << fpgas.total_res[i] << ' ';
+    }
     std::cout << std::endl;
     std::cout << "Lower res: ";
     for (int i = 0; i < 8; i++) {
@@ -141,8 +142,9 @@ private:
     finest.required_res.resize(8);
     finest.required_res = Eigen::VectorXi::Zero(8);
     int total_res = 0;
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++) {
       total_res += fpga_total_res[i];
+    }
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string name;
@@ -153,7 +155,7 @@ private:
       Node node;
       node.resources.resize(8);
       double max_ratio = 0;
-      for (int i = 0; i < 8; ++i) {
+      for (int i = 0; i < 8; i++) {
         ss >> node.resources[i]; // 8种资源
         // old: 点权定义为所有资源的代数和
         // node.weight += node.resources[i];
@@ -170,8 +172,9 @@ private:
     std::cout << "Finish reading design.are file, " << finest.nodes.size()
               << " nodes." << std::endl;
     std::cout << "Required res: ";
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++) {
       std::cout << finest.required_res[i] << ' ';
+    }
     std::cout << std::endl << std::endl;
   }
 
@@ -297,19 +300,22 @@ private:
     std::cout << "Allowed max hop: " << fpgas.max_hops << std::endl;
     std::cout << "Topo: " << std::endl;
     for (int i = 0; i < fpgas.size; i++) {
-      for (int j = 0; j < fpgas.size; j++)
+      for (int j = 0; j < fpgas.size; j++) {
         std::cout << fpgas.topology[i][j] << ' ';
+      }
       std::cout << '\n';
     }
     std::cout << "Dist: " << std::endl;
     for (int i = 0; i < fpgas.size; i++) {
-      for (int j = 0; j < fpgas.size; j++)
+      for (int j = 0; j < fpgas.size; j++) {
         std::cout << fpgas.dist[i][j] << ' ';
+      }
       std::cout << '\n';
     }
     std::cout << "MaxDist: " << std::endl;
-    for (int i = 0; i < fpgas.size; i++)
+    for (int i = 0; i < fpgas.size; i++) {
       std::cout << fpgas.max_dist[i] << ' ';
+    }
     std::cout << std::endl;
   }
 };
