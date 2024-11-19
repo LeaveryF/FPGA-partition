@@ -68,7 +68,7 @@ public:
     for (int i = 0; i < fpga_reverse_map.size(); i++) {
       fout << fpga_reverse_map.at(i) << ":";
       for (const auto &x : fpga_assignments[i]) {
-        fout << " " << node_reverse_map.at(x);
+        fout << ' ' << node_reverse_map.at(x);
       }
       fout << std::endl;
     }
