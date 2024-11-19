@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
   Util::printPeakMem();
   const auto endTotal = std::chrono::high_resolution_clock::now();
   Util::printTime(startTotal, endTotal);
+  std::cout << std::endl;
 
   return 0;
 }
