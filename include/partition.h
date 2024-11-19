@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdlib>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 #include "libmtkahypar.h"
@@ -21,9 +23,13 @@ private:
   double eps = 0; // imbalance, for mt // will be assigned
   std::string mt_out_file = "mt_results.txt"; // mt结果文件
 
-  // only when use_mt_lib is true
+  // only when use_mt_lib is false
+  std::string mt_bin_path = "./MtKaHyPar"; // mt可执行文件路径
+  std::string mt_in_hypergraph_file = "mt_input_hypergraph.txt"; // 超图
+  std::string mt_in_target_graph_file = "mt_input_target_graph.txt"; // 目标图
+
   int mt_seed = 0; // seed
-  bool mt_log = false; // log
+  bool mt_log = true; // log
 
   void init(const Graph &finest, const FPGA &fpgas) {
     // 实际上这样取eps也并不严谨 但至少是动态变化的了
@@ -38,6 +44,7 @@ private:
       this->eps = std::min(
           this->eps, std::max(res_eps[i], 0.0)); // eps设置为最紧张的资源
     }
+    this->eps /= 8; // 减小eps值 直观上和资源种类数相关
     std::cout << "Res eps: ";
     for (int i = 0; i < 8; i++) {
       std::cout << res_eps[i] << ' ';
@@ -165,7 +172,41 @@ private:
   }
 
   void mt_partition_bin(
-      const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {}
+      const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
+    // 输出hmetis格式的超图文件供mt使用
+
+    // 划分
+    std::ostringstream oss;
+    // clang-format off
+    oss << this->mt_bin_path << " -h " << this->mt_in_hypergraph_file
+        << " --preset-type=deterministic"
+        << " -t 4"
+        << " -k " << fpgas.size
+        << " -e " << std::setprecision(20) << this->eps << std::setprecision(2)
+        << " -g " << this->mt_in_target_graph_file
+        << " -o steiner_tree"
+        << " --write-partition-file=true"
+        << " --partition-output-folder=."
+        << " -v " << this->mt_log
+        << " --seed " << this->mt_seed;
+    // clang-format on
+    std::cout << "Executing cmd: " << oss.str() << std::endl;
+    if (!system(oss.str().c_str())) {
+      exit(1);
+    }
+
+    // 重命名输出文件
+    oss.str("");
+    oss << "mv `find . -type f -name \"*.KaHyPar\" -printf '%T+ %p\n' "
+           "| sort -r | head -n 1 | awk '{print $2}'` "
+        << this->mt_out_file;
+    std::cout << "Executing cmd: " << oss.str() << std::endl;
+    if (!system(oss.str().c_str())) {
+      exit(1);
+    }
+
+    // 读取划分结果
+  }
 
   void mt_partition(
       const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
