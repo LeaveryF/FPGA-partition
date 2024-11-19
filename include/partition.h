@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <vector>
@@ -19,7 +21,7 @@ public:
   }
 
 private:
-  bool use_mt_lib = true; // 使用mt的lib还是mt的bin
+  bool use_mt_lib = false; // 使用mt的lib还是mt的bin
   double eps = 0; // imbalance, for mt // will be assigned
   std::string mt_out_file = "mt_results.txt"; // mt结果文件
 
@@ -55,6 +57,8 @@ private:
 
   void mt_partition_lib(
       const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
+    std::cout << "Start mt partitioning with lib..." << std::endl << std::endl;
+
     // Initialize thread pool
     mt_kahypar_initialize_thread_pool(4, true);
     // Setup partitioning context
@@ -83,9 +87,9 @@ private:
       std::unique_ptr<mt_kahypar_hyperedge_id_t[]> hyperedges =
           std::make_unique<mt_kahypar_hyperedge_id_t[]>(finest.pin_size);
       int index = 0;
-      for (int i = 0; i < finest.nets.size(); i++) {
-        for (int j = 0; j < finest.nets[i].nodes.size(); j++) {
-          hyperedges[index++] = finest.nets[i].nodes[j];
+      for (const auto &net : finest.nets) {
+        for (const auto &node : net.nodes) {
+          hyperedges[index++] = node;
         }
       }
       // 节点权重数组
@@ -155,6 +159,7 @@ private:
         mt_kahypar_steiner_tree(partitioned_hg, target_graph);
 
     // Output Results
+    std::cout << std::endl;
     std::cout << "Partitioning Results:" << std::endl;
     std::cout << "Imbalance           = " << imbalance << std::endl;
     std::cout << "Steiner Tree Metric = " << steiner_tree_metric << std::endl;
@@ -173,7 +178,43 @@ private:
 
   void mt_partition_bin(
       const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
+    std::cout << "Start mt partitioning with bin..." << std::endl << std::endl;
+
     // 输出hmetis格式的超图文件供mt使用
+    std::ofstream fout(this->mt_in_hypergraph_file);
+    if (!fout) {
+      std::cerr << "Cannot write file " << this->mt_in_hypergraph_file
+                << std::endl;
+      exit(1);
+    }
+    fout << finest.nets.size() << ' ' << finest.nodes.size() << ' ' << 11
+         << std::endl;
+    for (const auto &net : finest.nets) {
+      fout << net.weight << ' ';
+      for (const auto &node : net.nodes) {
+        fout << node << ' ';
+      }
+      fout << std::endl;
+    }
+    fout.close();
+
+    // 输出metis格式的目标图文件供mt使用
+    fout.open(this->mt_in_target_graph_file);
+    if (!fout) {
+      std::cerr << "Cannot write file " << this->mt_in_target_graph_file
+                << std::endl;
+      exit(1);
+    }
+    fout << fpgas.size << ' ' << fpgas.num_edges << ' ' << 1 << std::endl;
+    for (int i = 0; i < fpgas.size; i++) {
+      for (int j = 0; j < fpgas.size; j++) {
+        if (fpgas.topology[i][j] == 1) {
+          fout << j << ' ' << 1 << ' ';
+        }
+      }
+      fout << std::endl;
+    }
+    fout.close();
 
     // 划分
     std::ostringstream oss;
@@ -191,9 +232,10 @@ private:
         << " --seed " << this->mt_seed;
     // clang-format on
     std::cout << "Executing cmd: " << oss.str() << std::endl;
-    if (!system(oss.str().c_str())) {
+    if (system(oss.str().c_str()) != 0) {
       exit(1);
     }
+    std::cout << std::endl;
 
     // 重命名输出文件
     oss.str("");
@@ -201,11 +243,22 @@ private:
            "| sort -r | head -n 1 | awk '{print $2}'` "
         << this->mt_out_file;
     std::cout << "Executing cmd: " << oss.str() << std::endl;
-    if (!system(oss.str().c_str())) {
+    if (system(oss.str().c_str()) != 0) {
       exit(1);
     }
+    std::cout << std::endl;
 
     // 读取划分结果
+    std::cout << "Reading partition result:" << std::endl;
+    std::ifstream fin(this->mt_out_file);
+    if (!fin) {
+      std::cerr << "Cannot find file " << this->mt_out_file << std::endl;
+      exit(1);
+    }
+    for (int i = 0; i < finest.nodes.size(); i++) {
+      fin >> parts[i];
+    }
+    std::cout << std::endl;
   }
 
   void mt_partition(
