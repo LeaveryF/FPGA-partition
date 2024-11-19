@@ -28,7 +28,8 @@ public:
     read_design_info(
         input_dir + "/design.info", fpgas, fpga_map, fpga_reverse_map);
     read_design_are(
-        input_dir + "/design.are", finest, node_map, node_reverse_map);
+        input_dir + "/design.are", finest, node_map, node_reverse_map,
+        fpgas.total_res);
     read_design_net(input_dir + "/design.net", finest, node_map);
     read_design_topo(input_dir + "/design.topo", fpgas, fpga_map);
 
@@ -128,7 +129,8 @@ private:
   void read_design_are(
       const std::string &file_path, Graph &finest,
       std::unordered_map<std::string, int> &node_map,
-      std::unordered_map<int, std::string> &node_reverse_map) {
+      std::unordered_map<int, std::string> &node_reverse_map,
+      const Eigen::VectorXi &fpga_total_res) {
     std::ifstream file(file_path);
     if (!file) {
       std::cerr << "Cannot find design.are file." << std::endl;
@@ -138,6 +140,9 @@ private:
     std::string line;
     finest.required_res.resize(8);
     finest.required_res = Eigen::VectorXi::Zero(8);
+    int total_res = 0;
+    for (int i = 0; i < 8; i++)
+      total_res += fpga_total_res[i];
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string name;
@@ -147,10 +152,17 @@ private:
 
       Node node;
       node.resources.resize(8);
+      double max_ratio = 0;
       for (int i = 0; i < 8; ++i) {
         ss >> node.resources[i]; // 8种资源
-        node.weight += node.resources[i]; // 点权定义为所有资源的代数和
+        // old: 点权定义为所有资源的代数和
+        // node.weight += node.resources[i];
+        // new: 点权定义为占用比例最大的资源的比例乘以总资源
+        max_ratio = std::max(
+            max_ratio,
+            (double)(node.resources[i] + 1) / (fpga_total_res[i] + 1));
       }
+      node.weight = max_ratio * total_res;
       finest.required_res += node.resources;
 
       finest.nodes.push_back(node); // add to finest

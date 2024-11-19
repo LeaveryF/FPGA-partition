@@ -17,7 +17,9 @@
 // 结点
 class Node {
 public:
-  int weight = 0; // 点权 //
+  // old: 点权定义为所有资源的代数和
+  // new: 点权定义为占用比例最大的资源的比例乘以总资源
+  int weight = 0; // 点权
   Eigen::VectorXi resources; // 8种资源
 };
 
