@@ -246,6 +246,7 @@ private:
     std::getline(file, line); // Read max hop
     fpgas.max_hops = std::stoi(line);
     fpgas.topology.resize(fpgas.size, std::vector<int>(fpgas.size)); // init
+    fpgas.graph.resize(fpgas.size); // init
     while (getline(file, line)) {
       std::stringstream ss(line);
       std::string s1, s2;
