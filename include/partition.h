@@ -69,7 +69,7 @@ private:
         context, fpgas.size, this->mt_eps, KM1);
     // Enable logging
     mt_kahypar_set_context_parameter(
-        context, VERBOSE, this->mt_log ? "1" : "0");
+        context, VERBOSE, std::to_string(this->mt_log).c_str());
     mt_kahypar_set_seed(this->mt_seed);
 
     mt_kahypar_hypergraph_t hypergraph; // 超图
