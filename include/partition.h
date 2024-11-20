@@ -26,14 +26,13 @@ private:
   bool use_mt_lib = false; // 使用mt的lib还是mt的bin
   double eps = 0; // imbalance, for mt // will be assigned
   std::string mt_out_file = "mt_results.txt"; // mt结果文件
+  int mt_seed = 0; // seed
+  bool mt_log = true; // log
 
   // only when use_mt_lib is false
   std::string mt_bin_path = "./MtKaHyPar"; // mt可执行文件路径
   std::string mt_in_hypergraph_file = "mt_input_hypergraph.txt"; // 超图
   std::string mt_in_target_graph_file = "mt_input_target_graph.txt"; // 目标图
-
-  int mt_seed = 0; // seed
-  bool mt_log = true; // log
 
   void init(const Graph &finest, const FPGA &fpgas) {
     // 实际上这样取eps也并不严谨 但至少是动态变化的了
