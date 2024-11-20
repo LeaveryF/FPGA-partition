@@ -24,10 +24,10 @@ public:
 
 private:
   bool use_mt_lib = false; // 使用mt的lib还是mt的bin
-  double eps = 0; // imbalance, for mt // will be assigned
-  std::string mt_out_file = "mt_results.txt"; // mt结果文件
+  double mt_eps = 0; // imbalance, for mt // will be assigned
   int mt_seed = 0; // seed
   bool mt_log = true; // log
+  std::string mt_out_file = "mt_results.txt"; // mt结果文件
 
   // only when use_mt_lib is false
   std::string mt_bin_path = "./MtKaHyPar"; // mt可执行文件路径
@@ -36,7 +36,7 @@ private:
 
   void init(const Graph &finest, const FPGA &fpgas) {
     // 实际上这样取eps也并不严谨 但至少是动态变化的了
-    this->eps = std::numeric_limits<double>::max();
+    this->mt_eps = std::numeric_limits<double>::max();
     Eigen::VectorXd ave_res = finest.required_res.cast<double>() / fpgas.size;
     Eigen::VectorXd res_eps = Eigen::VectorXd::Zero(8);
     for (int i = 0; i < 8; i++) { // 假定每块fpga的8种资源分别差不多
@@ -44,16 +44,16 @@ private:
       if (res_eps[i] < 0) {
         std::cout << "Warning: res " << i << " is tight." << std::endl;
       }
-      this->eps = std::min(
-          this->eps, std::max(res_eps[i], 0.0)); // eps设置为最紧张的资源
+      this->mt_eps = std::min(
+          this->mt_eps, std::max(res_eps[i], 0.0)); // eps设置为最紧张的资源
     }
-    this->eps /= 8; // 减小eps值 直观上和资源种类数相关
+    this->mt_eps /= 8; // 减小eps值 直观上和资源种类数相关
     std::cout << "Res eps: ";
     for (int i = 0; i < 8; i++) {
       std::cout << res_eps[i] << ' ';
     }
     std::cout << std::endl;
-    std::cout << "eps: " << this->eps << std::endl << std::endl;
+    std::cout << "eps: " << this->mt_eps << std::endl << std::endl;
   }
 
   void mt_partition_lib(
@@ -65,7 +65,8 @@ private:
     // Setup partitioning context
     mt_kahypar_context_t *context = mt_kahypar_context_new();
     mt_kahypar_load_preset(context, DETERMINISTIC);
-    mt_kahypar_set_partitioning_parameters(context, fpgas.size, this->eps, KM1);
+    mt_kahypar_set_partitioning_parameters(
+        context, fpgas.size, this->mt_eps, KM1);
     // Enable logging
     mt_kahypar_set_context_parameter(
         context, VERBOSE, this->mt_log ? "1" : "0");
@@ -227,7 +228,7 @@ private:
         << " --preset-type=deterministic"
         << " -t 4"
         << " -k " << fpgas.size
-        << " -e " << std::setprecision(20) << this->eps << std::setprecision(2)
+        << " -e " << std::setprecision(20) << this->mt_eps << std::setprecision(2)
         << " -g " << this->mt_in_target_graph_file
         << " -o steiner_tree"
         << " --write-partition-file=true"
