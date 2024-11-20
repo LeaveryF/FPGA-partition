@@ -258,34 +258,41 @@ private:
       fpgas.num_edges++;
     }
 
-    // compute dist, max_dist
-    fpgas.dist.resize(fpgas.size, std::vector<int>(fpgas.size)); // init
-    fpgas.max_dist.resize(fpgas.size, 0); // init
-    for (int i = 0; i < fpgas.size; i++) { // bfs求最短路
-      std::queue<std::pair<int, int>> que;
-      std::vector<bool> visited(fpgas.size);
-      que.push({i, 0});
-      visited[i] = true;
-      std::pair<int, int> cur;
-      while (!que.empty()) {
-        cur = que.front();
-        que.pop();
-        for (int j = 0; j < fpgas.size; j++) {
-          if (fpgas.topology[cur.first][j] == 1 && !visited[j]) {
-            que.push({j, cur.second + 1});
-            fpgas.dist[i][j] = cur.second + 1;
-            visited[j] = true;
-          }
+    // compute dist
+    fpgas.dist.resize(fpgas.size, std::vector<int>(fpgas.size));
+    for (int i = 0; i < fpgas.size; i++) {
+      for (int j = 0; j < fpgas.size; j++) {
+        if (i == j) {
+          fpgas.dist[i][j] = 0;
+        } else if (fpgas.topology[i][j] == 1) {
+          fpgas.dist[i][j] = 1;
+        } else {
+          fpgas.dist[i][j] = std::numeric_limits<int>::max() / 2;
         }
       }
-      fpgas.max_dist[i] = cur.second;
+    }
+    for (int k = 0; k < fpgas.size; k++) {
+      for (int i = 0; i < fpgas.size; i++) {
+        for (int j = 0; j < fpgas.size; j++) {
+          fpgas.dist[i][j] = std::min(
+              fpgas.dist[i][j], fpgas.dist[i][k] + fpgas.dist[k][j]); // floyd
+        }
+      }
+    }
+
+    // compute max_dist
+    fpgas.max_dist.resize(fpgas.size, 0);
+    for (int i = 0; i < fpgas.size; i++) {
+      for (int j = 0; j < fpgas.size; j++) {
+        fpgas.max_dist[i] = std::max(fpgas.max_dist[i], fpgas.dist[i][j]);
+      }
     }
 
     // compute s_hat
     fpgas.s_hat.resize(fpgas.size);
     for (int i = 0; i < fpgas.size; i++) {
       fpgas.s_hat[i].resize(fpgas.max_dist[i] + 1);
-      for (int x = 1; x <= fpgas.max_dist[i]; x++) {
+      for (int x = 0; x <= fpgas.max_dist[i]; x++) {
         for (int j = 0; j < fpgas.size; j++) {
           if (fpgas.dist[i][j] <= x) {
             fpgas.s_hat[i][x].insert(j);
