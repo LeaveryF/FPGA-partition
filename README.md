@@ -81,6 +81,7 @@ cd build/bin/ # 切换到可执行文件目录下
 - scripts/mt_run.sh:
 运行可执行文件bin/MtKaHyPar  
 需在build/bin/目录下运行  
+根据需要修改参数
 
 - scripts/run.sh:  
 运行项目生成的可执行文件partitioner  
