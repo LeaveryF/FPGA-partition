@@ -15,11 +15,11 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Sparse>
 
-#include "util.h"
+#include "utils.h"
 
-class IOSystem {
+class IO {
 public:
-  void read_input_dir(
+  static void read_input_dir(
       const std::string &input_dir, Graph &finest, FPGA &fpgas,
       std::unordered_map<std::string, int> &fpga_map,
       std::unordered_map<std::string, int> &node_map,
@@ -36,7 +36,7 @@ public:
     std::cout << "Finish reading input files." << std::endl << std::endl;
   }
 
-  void write_design_fpga_out(
+  static void write_design_fpga_out(
       const std::string &output_file, const std::vector<int> &parts,
       const std::unordered_map<int, std::string> &fpga_reverse_map,
       const std::unordered_map<int, std::string> &node_reverse_map) {
@@ -46,20 +46,12 @@ public:
       exit(1);
     }
 
-    std::vector<std::vector<int>> fpga_assignments(fpga_reverse_map.size());
-    for (int i = 0; i < parts.size(); i++) {
-      if (parts[i] >= 0 && parts[i] < fpga_reverse_map.size()) {
-        fpga_assignments[parts[i]].push_back(i);
-      } else {
-        std::cerr << "Node " << i << "'s part invaild. Partition failed."
-                  << std::endl;
-        exit(1);
-      }
-    }
+    std::vector<std::vector<int>> fpgas_assignments(fpga_reverse_map.size());
+    Utils::get_fpgas_assignments(parts, fpgas_assignments);
 
     for (int i = 0; i < fpga_reverse_map.size(); i++) {
       fout << fpga_reverse_map.at(i) << ":";
-      for (const auto &x : fpga_assignments[i]) {
+      for (const auto &x : fpgas_assignments[i]) {
         fout << ' ' << node_reverse_map.at(x);
       }
       fout << std::endl;
@@ -68,8 +60,63 @@ public:
               << std::endl;
   }
 
+  // used by partition.h
+
+  static void write_mt_input_hypergraph_file(
+      const std::string &file_path, const Graph &finest) {
+    std::ofstream fout(file_path);
+    if (!fout) {
+      std::cerr << "Cannot write file " << file_path << std::endl;
+      exit(1);
+    }
+    fout << finest.nets.size() << ' ' << finest.nodes.size() << ' ' << 11
+         << std::endl;
+    for (const auto &net : finest.nets) {
+      fout << net.weight << ' ';
+      for (const auto &node : net.nodes) {
+        fout << node + 1 << ' ';
+      }
+      fout << std::endl;
+    }
+    for (const auto &node : finest.nodes) {
+      fout << node.weight << '\n';
+    }
+  }
+
+  static void write_mt_input_target_graph_file(
+      const std::string &file_path, const FPGA &fpgas) {
+    std::ofstream fout(file_path);
+    if (!fout) {
+      std::cerr << "Cannot write file " << file_path << std::endl;
+      exit(1);
+    }
+    fout << fpgas.size << ' ' << fpgas.num_edges << ' ' << 1 << std::endl;
+    for (int i = 0; i < fpgas.size; i++) {
+      for (int j = 0; j < fpgas.size; j++) {
+        if (fpgas.topology[i][j] == 1) {
+          fout << j + 1 << ' ' << 1 << ' ';
+        }
+      }
+      fout << std::endl;
+    }
+  }
+
+  static void write_mt_output_file(const std::string &file_path) {}
+
+  static void
+  read_mt_results(const std::string &file_path, std::vector<int> &parts) {
+    std::ifstream fin(file_path);
+    if (!fin) {
+      std::cerr << "Cannot find file " << file_path << std::endl;
+      exit(1);
+    }
+    for (int i = 0; i < parts.size(); i++) {
+      fin >> parts[i];
+    }
+  }
+
 private:
-  void read_design_info(
+  static void read_design_info(
       const std::string &file_path, FPGA &fpgas,
       std::unordered_map<std::string, int> &fpga_map,
       std::unordered_map<int, std::string> &fpga_reverse_map) {
@@ -119,7 +166,7 @@ private:
     std::cout << std::endl << std::endl;
   }
 
-  void read_design_are(
+  static void read_design_are(
       const std::string &file_path, Graph &finest,
       std::unordered_map<std::string, int> &node_map,
       std::unordered_map<int, std::string> &node_reverse_map,
@@ -177,7 +224,7 @@ private:
     std::cout << std::endl << std::endl;
   }
 
-  void read_design_net(
+  static void read_design_net(
       const std::string &file_path, Graph &finest,
       const std::unordered_map<std::string, int> &node_map) {
     std::ifstream file(file_path);
@@ -232,7 +279,7 @@ private:
               << std::endl;
   }
 
-  void read_design_topo(
+  static void read_design_topo(
       const std::string &file_path, FPGA &fpgas,
       const std::unordered_map<std::string, int> &fpga_map) {
     std::ifstream file(file_path);
