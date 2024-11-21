@@ -259,7 +259,7 @@ public:
 
   static int get_total_hop_length(
       const std::vector<Net> &nets, const std::vector<int> &parts,
-      const std::vector<std::vector<int>> &dist, const int max_hop,
+      const std::vector<std::vector<int>> &dist, const int max_hops,
       int &violation_count) {
     int total_hop_length = 0;
     for (const auto &net : nets) {
@@ -267,7 +267,7 @@ public:
       if (hop_count == -1) {
         continue;
       }
-      if (hop_count > max_hop) {
+      if (hop_count > max_hops) {
         violation_count++;
       }
       total_hop_length += hop_count * net.weight;
