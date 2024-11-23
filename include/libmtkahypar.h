@@ -157,7 +157,7 @@ mt_kahypar_read_target_graph_from_file(const char *file_name);
  */
 MT_KAHYPAR_API mt_kahypar_hypergraph_t mt_kahypar_create_hypergraph(
     mt_kahypar_preset_type_t preset, // 预设类型
-    const mt_kahypar_hypernode_id_t num_vertices, // 结点数
+    const mt_kahypar_hypernode_id_t num_vertices, // 节点数
     const mt_kahypar_hyperedge_id_t num_hyperedges, // 超边数
     const size_t *hyperedge_indices, // 超边索引数组 length = num_hyperedges+1
     const mt_kahypar_hyperedge_id_t *hyperedges, // 超边数组 length = num_pins
@@ -179,7 +179,7 @@ MT_KAHYPAR_API mt_kahypar_hypergraph_t mt_kahypar_create_hypergraph(
  */
 MT_KAHYPAR_API mt_kahypar_hypergraph_t mt_kahypar_create_graph(
     const mt_kahypar_preset_type_t preset, // 预设类型
-    const mt_kahypar_hypernode_id_t num_vertices, // 结点数
+    const mt_kahypar_hypernode_id_t num_vertices, // 节点数
     const mt_kahypar_hyperedge_id_t num_edges, // 边数
     const mt_kahypar_hypernode_id_t *edges, // 边数组 length = num_edges * 2
     const mt_kahypar_hyperedge_weight_t *edge_weights, // 边权重数组

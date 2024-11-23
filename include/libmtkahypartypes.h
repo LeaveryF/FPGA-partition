@@ -45,7 +45,7 @@ typedef struct {
   mt_kahypar_partition_type_t type;
 } mt_kahypar_partitioned_hypergraph_const_t; // 常量分区超图
 
-typedef unsigned long int mt_kahypar_hypernode_id_t; // 结点
+typedef unsigned long int mt_kahypar_hypernode_id_t; // 节点
 typedef unsigned long int mt_kahypar_hyperedge_id_t; // 超边
 typedef int mt_kahypar_hypernode_weight_t; // 点权
 typedef int mt_kahypar_hyperedge_weight_t; // 边权
