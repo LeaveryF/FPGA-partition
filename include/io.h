@@ -60,7 +60,7 @@ public:
               << std::endl;
   }
 
-  // used by partition.h mt_partition_bin
+  // used by MtPartitioner mt_partition_bin
 
   static void write_mt_input_hypergraph_file(
       const std::string &file_path, const Graph &finest) {
