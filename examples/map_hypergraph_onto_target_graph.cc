@@ -3,39 +3,28 @@
 #include <thread>
 #include <vector>
 
-#include <libmtkahypar.h>
+#include "libmtkahypar.h"
 
-// Install library interface via 'sudo make install.mtkahypar' in build folder
-// Compile with: g++ -std=c++14 -DNDEBUG -O3 map_hypergraph_onto_target_graph.cc
-// -o example -lmtkahypar
 int main(int argc, char *argv[]) {
-
   // Initialize thread pool
-  mt_kahypar_initialize_thread_pool(
-      std::thread::hardware_concurrency() /* use all available cores */,
-      true /* activate interleaved NUMA allocation policy */);
-
+  mt_kahypar_initialize_thread_pool(4, true);
   // Setup partitioning context
   mt_kahypar_context_t *context = mt_kahypar_context_new();
-  mt_kahypar_load_preset(
-      context, DETERMINISTIC /* corresponds to MT-KaHyPar-D */);
-  mt_kahypar_configure_context_from_file(context, "config.ini");
-  // In the following, we map a hypergraph into target graph with 8 nodes
-  // with an allowed imbalance of 3%
-  mt_kahypar_set_partitioning_parameters(
-      context, 8 /* number of blocks */, 1000 /* imbalance parameter */,
-      KM1 /* objective function - not relevant for mapping */);
-  mt_kahypar_set_seed(42 /* seed */);
+  mt_kahypar_load_preset(context, DETERMINISTIC);
+  // mt_kahypar_configure_context_from_file(context, "config.ini");
+  mt_kahypar_set_partitioning_parameters(context, 8, 0.03, KM1);
   // Enable logging
   mt_kahypar_set_context_parameter(context, VERBOSE, "1");
+  // Set seed
+  // mt_kahypar_set_seed(0);
 
-  // Load Hypergraph for DEFAULT preset
+  // Load Hypergraph
   mt_kahypar_hypergraph_t hypergraph = mt_kahypar_read_hypergraph_from_file(
-      "ibm01.hgr", DEFAULT, HMETIS /* file format */);
+      "./mt_input_hypergraph.txt", DETERMINISTIC, HMETIS);
 
-  // Read target graph file in Metis file format
+  // Read target graph file
   mt_kahypar_target_graph_t *target_graph =
-      mt_kahypar_read_target_graph_from_file("target.graph");
+      mt_kahypar_read_target_graph_from_file("./mt_input_target_graph.txt");
 
   // Map hypergraph onto target graph
   mt_kahypar_partitioned_hypergraph_t partitioned_hg =

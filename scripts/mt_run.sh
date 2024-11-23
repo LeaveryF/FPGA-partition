@@ -2,12 +2,12 @@
 # 需在build/bin/目录下运行  
 # 根据需要修改参数
 ../../bin/MtKaHyPar \
-  -h ./instances/test_instance.hgr \
+  -h ./mt_input_hypergraph.txt \
   --preset-type=deterministic \
   -t 4 \
   -k 8 \
   -e 0.03 \
-  -g ./mt_input_target_graph_3.txt \
+  -g ./mt_input_target_graph.txt \
   -o steiner_tree \
 
   # -h ../../examples/ibm01.hgr \
