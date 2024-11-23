@@ -25,7 +25,8 @@ public:
 
 private:
   bool use_mt_lib = false; // 使用mt的lib还是mt的bin
-  double mt_eps = 0; // imbalance, for mt // will be assigned
+  mt_kahypar_preset_type_t mt_preset = DETERMINISTIC; // preset type
+  double mt_eps = 0; // imbalance // will be assigned
   int mt_seed = 0; // seed
   bool mt_log = true; // log
   std::string mt_out_file = "mt_results.txt"; // mt结果文件
@@ -36,7 +37,7 @@ private:
   std::string mt_in_target_graph_file = "mt_input_target_graph.txt"; // 目标图
 
   void init(const Graph &finest, const FPGA &fpgas) {
-    // 实际上这样取eps也并不严谨 但至少是动态变化的了
+    // 实际上这样取eps也并没什么用 但至少是动态变化的了
     this->mt_eps = std::numeric_limits<double>::max();
     Eigen::VectorXd ave_res = finest.required_res.cast<double>() / fpgas.size;
     Eigen::VectorXd res_eps = Eigen::VectorXd::Zero(8);
@@ -65,7 +66,7 @@ private:
     mt_kahypar_initialize_thread_pool(4, true);
     // Setup partitioning context
     mt_kahypar_context_t *context = mt_kahypar_context_new();
-    mt_kahypar_load_preset(context, DETERMINISTIC);
+    mt_kahypar_load_preset(context, this->mt_preset);
     mt_kahypar_set_partitioning_parameters(
         context, fpgas.size, this->mt_eps, KM1);
     // Enable logging
@@ -76,7 +77,7 @@ private:
 
     // Construct hypergraph
     mt_kahypar_hypergraph_t hypergraph; // 超图
-    Utils::construct_mt_hypergraph(finest, hypergraph);
+    Utils::construct_mt_hypergraph(finest, hypergraph, this->mt_preset);
     // hypergraph = mt_kahypar_read_hypergraph_from_file(
     //     "./mt_input_hypergraph.txt", DETERMINISTIC, HMETIS);
 
@@ -139,9 +140,11 @@ private:
 
     // 划分
     std::ostringstream oss;
+    const std::string mt_preset_str[5] = {
+        "deterministic", "large_k", "default", "quality", "highest_quality"};
     // clang-format off
     oss << this->mt_bin_path << " -h " << this->mt_in_hypergraph_file
-        << " --preset-type=deterministic"
+        << " --preset-type=" << mt_preset_str[this->mt_preset]
         << " -t 4"
         << " -k " << fpgas.size
         << " -e " << std::setprecision(20) << this->mt_eps << std::setprecision(2)

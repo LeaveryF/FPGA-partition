@@ -147,7 +147,8 @@ public:
 
   // used by MtPartitioner mt_partition_lib
   static void construct_mt_hypergraph(
-      const Graph &finest, mt_kahypar_hypergraph_t &hypergraph) {
+      const Graph &finest, mt_kahypar_hypergraph_t &hypergraph,
+      const mt_kahypar_preset_type_t &type) {
     // 超边索引数组
     std::unique_ptr<size_t[]> hyperedge_indices =
         std::make_unique<size_t[]>(finest.nets.size() + 1);
@@ -180,9 +181,8 @@ public:
     }
     // Construct hypergraph
     hypergraph = mt_kahypar_create_hypergraph(
-        DETERMINISTIC, finest.nodes.size(), finest.nets.size(),
-        hyperedge_indices.get(), hyperedges.get(), hyperedge_weights.get(),
-        node_weights.get());
+        type, finest.nodes.size(), finest.nets.size(), hyperedge_indices.get(),
+        hyperedges.get(), hyperedge_weights.get(), node_weights.get());
   }
 
   static void construct_mt_target_graph(
