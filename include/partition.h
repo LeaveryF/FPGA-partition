@@ -5,9 +5,10 @@
 #include <sstream>
 #include <vector>
 
-#include "io.h"
 #include "libmtkahypar.h"
 #include "libmtkahypartypes.h"
+
+#include "io.h"
 #include "utils.h"
 
 class MtPartitioner {
@@ -24,7 +25,7 @@ public:
   }
 
 private:
-  bool use_mt_lib = false; // 使用mt的lib还是mt的bin
+  bool use_mt_lib = true; // 使用mt的lib还是mt的bin
   mt_kahypar_preset_type_t mt_preset = DETERMINISTIC; // preset type
   double mt_eps = 0; // imbalance // will be assigned
   int mt_seed = 0; // seed
