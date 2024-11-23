@@ -218,7 +218,8 @@ private:
     std::cout << std::endl;
     std::cout << "Ratio: ";
     for (int i = 0; i < 8; i++) {
-      std::cout << (double)finest.required_res[i] * 100 / fpga_total_res[i]
+      std::cout << std::fixed << std::setprecision(2)
+                << (double)finest.required_res[i] * 100 / fpga_total_res[i]
                 << "% ";
     }
     std::cout << std::endl << std::endl;
@@ -272,8 +273,8 @@ private:
               << finest.nets.size() << " nets, " << finest.pin_size << " pins."
               << std::endl;
     std::cout << "Max pins: " << max_pins << "(" << max_node_name << "), "
-              << "Ave pins: " << std::fixed << std::setprecision(2)
-              << (double)finest.pin_size / finest.nets.size() << std::endl
+              << "Ave pins: " << (double)finest.pin_size / finest.nets.size()
+              << std::endl
               << "Max used: " << max_used << "(" << max_used_name << ")"
               << std::endl
               << std::endl;
