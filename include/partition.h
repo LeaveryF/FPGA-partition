@@ -24,7 +24,7 @@ public:
   }
 
 private:
-  bool use_mt_lib = false; // 使用mt的lib还是mt的bin
+  bool use_mt_lib = true; // 使用mt的lib还是mt的bin
   double mt_eps = 0; // imbalance, for mt // will be assigned
   int mt_seed = 0; // seed
   bool mt_log = true; // log
@@ -55,6 +55,7 @@ private:
     }
     std::cout << std::endl;
     std::cout << "eps: " << this->mt_eps << std::endl << std::endl;
+    this->mt_eps = 0.03;
   }
 
   void mt_partition_lib(
@@ -71,15 +72,20 @@ private:
     // Enable logging
     mt_kahypar_set_context_parameter(
         context, VERBOSE, std::to_string(this->mt_log).c_str());
+    // Set seed
     mt_kahypar_set_seed(this->mt_seed);
 
     // Construct hypergraph
     mt_kahypar_hypergraph_t hypergraph; // 超图
     Utils::construct_mt_hypergraph(finest, hypergraph);
+    // hypergraph = mt_kahypar_read_hypergraph_from_file(
+    //     "./mt_input_hypergraph.txt", DETERMINISTIC, HMETIS);
 
     // Construct target graph
     mt_kahypar_target_graph_t *target_graph; // 目标图
     Utils::construct_mt_target_graph(fpgas, &target_graph);
+    // target_graph =
+    //     mt_kahypar_read_target_graph_from_file("./mt_input_target_graph.txt");
 
     // Map hypergraph onto target graph
     mt_kahypar_partitioned_hypergraph_t partitioned_hg =
@@ -96,7 +102,7 @@ private:
 
     // Extract Block Weights
     std::unique_ptr<mt_kahypar_hypernode_weight_t[]> block_weights =
-        std::make_unique<mt_kahypar_hypernode_weight_t[]>(8);
+        std::make_unique<mt_kahypar_hypernode_weight_t[]>(fpgas.size);
     mt_kahypar_get_block_weights(partitioned_hg, block_weights.get());
 
     // Compute Metrics
@@ -167,6 +173,10 @@ private:
   }
 };
 
+class Checker {
+public:
+};
+
 class Partition {
 public:
   static void
@@ -174,6 +184,29 @@ public:
     // mt-kahypar partition
     MtPartitioner mt_partitioner;
     mt_partitioner.mt_partition(finest, fpgas, parts);
+
+    // check
+    // std::cout << "Checking partition results...";
+    // std::vector<std::unordered_set<int>> assignments(fpgas.size);
+    // Utils::get_assignments(parts, assignments);
+    // std::vector<Eigen::VectorXi> required_resources(fpgas.size);
+    // Utils::get_required_resources(
+    //     assignments, finest.nodes, required_resources);
+    // for (int i = 0; i < fpgas.size; ++i) {
+    //   std::cout << "Block " << i << ": ";
+    //   for (int j = 0; i < 8; j++) {
+    //     std::cout << required_resources[i][j] << ' ';
+    //   }
+    //   std::cout << std::endl;
+    // }
+    // std::cout << std::endl;
+
+    // std::vector<int> violation_fpgas;
+    // std::vector<std::vector<int>> violation_fpgas_res;
+    // Utils::get_all_fpgas_res_violations(
+    //     fpgas.resources, required_resources, violation_fpgas,
+    //     violation_fpgas_res);
+    // std::cout << violation_fpgas.size() << " violation fpgas" << std::endl;
 
     std::cout << "Finish partition." << std::endl << std::endl;
   }

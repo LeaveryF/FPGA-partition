@@ -46,12 +46,12 @@ public:
       exit(1);
     }
 
-    std::vector<std::vector<int>> fpgas_assignments(fpga_reverse_map.size());
-    Utils::get_fpgas_assignments(parts, fpgas_assignments);
+    std::vector<std::unordered_set<int>> assignments(fpga_reverse_map.size());
+    Utils::get_assignments(parts, assignments);
 
     for (int i = 0; i < fpga_reverse_map.size(); i++) {
       fout << fpga_reverse_map.at(i) << ":";
-      for (const auto &x : fpgas_assignments[i]) {
+      for (const auto &x : assignments[i]) {
         fout << ' ' << node_reverse_map.at(x);
       }
       fout << std::endl;
@@ -60,7 +60,7 @@ public:
               << std::endl;
   }
 
-  // used by partition.h
+  // used by partition.h mt_partition_bin
 
   static void write_mt_input_hypergraph_file(
       const std::string &file_path, const Graph &finest) {
@@ -79,7 +79,7 @@ public:
       fout << std::endl;
     }
     for (const auto &node : finest.nodes) {
-      fout << node.weight << '\n';
+      fout << node.weight << std::endl;
     }
   }
 
@@ -90,18 +90,18 @@ public:
       std::cerr << "Cannot write file " << file_path << std::endl;
       exit(1);
     }
-    fout << fpgas.size << ' ' << fpgas.num_edges << ' ' << 1 << std::endl;
+    // metis格式要求第二个参数为无向边的数量 但是实际输入的边数似乎不做限制？
+    // 方便起见我们所有双向边都输出一次
+    fout << fpgas.size << ' ' << fpgas.num_edges / 2 << std::endl;
     for (int i = 0; i < fpgas.size; i++) {
       for (int j = 0; j < fpgas.size; j++) {
         if (fpgas.topology[i][j] == 1) {
-          fout << j + 1 << ' ' << 1 << ' ';
+          fout << j + 1 << ' ';
         }
       }
       fout << std::endl;
     }
   }
-
-  static void write_mt_output_file(const std::string &file_path) {}
 
   static void
   read_mt_results(const std::string &file_path, std::vector<int> &parts) {
@@ -299,10 +299,18 @@ private:
 
       int id1 = fpga_map.at(s1), id2 = fpga_map.at(s2);
       fpgas.topology[id1][id2] = 1; // attention for undirected graph
-      fpgas.topology[id2][id1] = 1;
-      fpgas.edges.push_back(id1);
-      fpgas.edges.push_back(id2);
-      fpgas.num_edges++;
+      fpgas.topology[id2][id1] = 1; // 输入不保证反向边会存在！
+    }
+
+    // compute num_edges and edges
+    for (int i = 0; i < fpgas.size; i++) {
+      for (int j = 0; j < fpgas.size; j++) {
+        if (fpgas.topology[i][j] == 1) {
+          fpgas.num_edges++;
+          fpgas.edges.push_back(i);
+          fpgas.edges.push_back(j);
+        }
+      }
     }
 
     // compute dist
@@ -357,14 +365,14 @@ private:
       for (int j = 0; j < fpgas.size; j++) {
         std::cout << fpgas.topology[i][j] << ' ';
       }
-      std::cout << '\n';
+      std::cout << std::endl;
     }
     std::cout << "Dist: " << std::endl;
     for (int i = 0; i < fpgas.size; i++) {
       for (int j = 0; j < fpgas.size; j++) {
         std::cout << fpgas.dist[i][j] << ' ';
       }
-      std::cout << '\n';
+      std::cout << std::endl;
     }
     std::cout << "MaxDist: " << std::endl;
     for (int i = 0; i < fpgas.size; i++) {

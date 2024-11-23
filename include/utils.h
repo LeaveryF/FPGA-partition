@@ -9,6 +9,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -18,7 +19,7 @@
 #include "libmtkahypar.h"
 #include "libmtkahypartypes.h"
 
-// 结点
+// 节点
 class Node {
 public:
   // old: 点权定义为所有资源的代数和
@@ -39,7 +40,7 @@ class Graph {
 public:
   std::vector<Node> nodes; // 节点
   std::vector<Net> nets; // 超边
-  std::vector<std::vector<int>> incident_edges; // 每个结点关联的所有超边
+  std::vector<std::vector<int>> incident_edges; // 每个节点关联的所有超边
 
   int pin_size = 0; // 引脚数
   Eigen::VectorXi required_res; // 总耗费资源
@@ -52,8 +53,8 @@ public:
   std::vector<Eigen::VectorXi> resources; // 资源
   std::vector<std::vector<int>> topology; // 拓扑 // 取值0/1 // 邻接矩阵
 
-  int num_edges = 0; // 边数
-  std::vector<int> edges; // 目标图的边 // for mt lib
+  int num_edges = 0; // 有向边数 // = 无向边数*2
+  std::vector<int> edges; // 目标图的边 // for mt lib // size = 2*num_edges
 
   Eigen::VectorXi total_res; // 总资源
   Eigen::VectorXi lower_res; // 资源下界
@@ -61,7 +62,7 @@ public:
   std::vector<int> max_dist; // 每个fpga到其他fpga的最大距离 // 仅用于求s_hat
   std::vector<std::vector<int>> dist; // 距离矩阵
   std::vector<std::vector<std::set<int>>>
-      s_hat; // 可达结点集合 s_hat[i][x]表示与节点i距离不大于x的结点集合
+      s_hat; // 可达节点集合 s_hat[i][x]表示与节点i距离不大于x的节点集合
 
   int max_hops; // 最大跳数
   int max_interconnects; // 最大对外互连数(该fpga的割边权重)
@@ -144,7 +145,7 @@ public:
               << " s" << std::endl;
   }
 
-  // used by MtPartitioner
+  // used by MtPartitioner mt_partition_lib
   static void construct_mt_hypergraph(
       const Graph &finest, mt_kahypar_hypergraph_t &hypergraph) {
     // 超边索引数组
@@ -188,19 +189,13 @@ public:
       const FPGA &fpgas, mt_kahypar_target_graph_t **target_grapt) {
     // 边数组
     std::unique_ptr<mt_kahypar_hypernode_id_t[]> edges =
-        std::make_unique<mt_kahypar_hypernode_id_t[]>(fpgas.edges.size());
-    for (int i = 0; i < fpgas.edges.size(); i++) {
+        std::make_unique<mt_kahypar_hypernode_id_t[]>(fpgas.num_edges * 2);
+    for (int i = 0; i < fpgas.num_edges * 2; i++) {
       edges[i] = fpgas.edges[i];
-    }
-    // 边权数组
-    std::unique_ptr<mt_kahypar_hyperedge_weight_t[]> edge_weights =
-        std::make_unique<mt_kahypar_hyperedge_weight_t[]>(fpgas.num_edges);
-    for (int i = 0; i < fpgas.num_edges; i++) {
-      edge_weights[i] = 1;
     }
     // Construct target graph
     *target_grapt = mt_kahypar_create_target_graph(
-        fpgas.size, fpgas.num_edges, edges.get(), edge_weights.get());
+        fpgas.size, fpgas.num_edges, edges.get(), nullptr);
   }
 
   static void get_mt_partition_results(
@@ -214,29 +209,55 @@ public:
     }
   }
 
-  // used by ...
+  // 获取划分后的分组结果
 
-  static void get_fpgas_assignments(
+  static void get_assignments(
       const std::vector<int> parts,
-      std::vector<std::vector<int>> &fpgas_assignments) {
+      std::vector<std::unordered_set<int>> &assignments) {
     for (int i = 0; i < parts.size(); i++) {
-      if (parts[i] < 0 || parts[i] >= fpgas_assignments.size()) {
+      if (parts[i] < 0 || parts[i] >= assignments.size()) {
         std::cerr << "Node " << i << "'s part invaild. Partition failed."
                   << std::endl;
         exit(1);
       }
-      fpgas_assignments[parts[i]].push_back(i);
+      assignments[parts[i]].insert(i);
     }
+  }
+
+  static void get_required_resources(
+      const std::vector<std::unordered_set<int>> &assignments,
+      const std::vector<Node> &nodes,
+      std::vector<Eigen::VectorXi> &required_resources) {
+    for (int i = 0; i < assignments.size(); i++) {
+      Eigen::VectorXi res = Eigen::VectorXi::Zero(8);
+      for (const auto &x : assignments[i]) {
+        res += nodes[x].resources;
+      }
+      required_resources.push_back(res);
+    }
+  }
+
+  // 资源相关
+
+  static bool check_all_fpgas_resources(
+      const std::vector<Eigen::VectorXi> &fpgas_resources,
+      const std::vector<Eigen::VectorXi> &required_resources) {
+    for (int i = 0; i < fpgas_resources.size(); i++) {
+      if (!Utils::check_single_fpga_resource(
+              fpgas_resources[i], required_resources[i])) {
+        return false;
+      }
+    }
+    return true;
   }
 
   static bool check_all_fpgas_resources(
       const std::vector<Eigen::VectorXi> &fpgas_resources,
-      const std::vector<Node> &nodes, const std::vector<int> &parts) {
-    std::vector<std::vector<int>> fpgas_assignments(fpgas_resources.size());
-    get_fpgas_assignments(parts, fpgas_assignments);
-    for (int i = 0; i < fpgas_assignments.size(); i++) {
+      const std::vector<Node> &nodes,
+      const std::vector<std::unordered_set<int>> &assignments) {
+    for (int i = 0; i < assignments.size(); i++) {
       if (!Utils::check_single_fpga_resource(
-              fpgas_resources[i], fpgas_assignments[i], nodes)) {
+              fpgas_resources[i], assignments[i], nodes)) {
         return false;
       }
     }
@@ -245,10 +266,19 @@ public:
 
   static bool check_single_fpga_resource(
       const Eigen::VectorXi &resources,
-      const std::vector<int> &fpgas_assignment,
+      const Eigen::VectorXi &required_resources) {
+    if ((resources - required_resources).minCoeff() < 0) {
+      return false;
+    }
+    return true;
+  }
+
+  static bool check_single_fpga_resource(
+      const Eigen::VectorXi &resources,
+      const std::unordered_set<int> &assignment,
       const std::vector<Node> &nodes) {
-    Eigen::VectorXi total_res = Eigen::VectorXi::Zero(resources.size());
-    for (const auto &x : fpgas_assignment) {
+    Eigen::VectorXi total_res = Eigen::VectorXi::Zero(8);
+    for (const auto &x : assignment) {
       total_res += nodes[x].resources;
       if ((total_res - resources).minCoeff() < 0) {
         return false;
@@ -257,39 +287,128 @@ public:
     return true;
   }
 
+  static void get_all_fpgas_res_violations(
+      const std::vector<Eigen::VectorXi> &fpgas_resources,
+      const std::vector<Eigen::VectorXi> &required_resources,
+      std::vector<int> &violation_fpgas,
+      std::vector<std::vector<int>> &violation_fpgas_res) {
+    for (int i = 0; i < fpgas_resources.size(); i++) {
+      std::vector<int> violation_res;
+      get_single_fpga_violations(
+          fpgas_resources[i], required_resources[i], violation_res);
+      if (!violation_res.empty()) {
+        violation_fpgas.push_back(i);
+        violation_fpgas_res.push_back(violation_res);
+      }
+    }
+  }
+
+  static void get_all_fpgas_res_violations(
+      const std::vector<Eigen::VectorXi> &fpgas_resources,
+      const std::vector<Node> &nodes,
+      const std::vector<std::unordered_set<int>> &assignments,
+      std::vector<int> &violation_fpgas,
+      std::vector<std::vector<int>> &violation_fpgas_res) {
+    for (int i = 0; i < assignments.size(); i++) {
+      std::vector<int> violation_res;
+      get_single_fpga_violations(
+          fpgas_resources[i], assignments[i], nodes, violation_res);
+      if (!violation_res.empty()) {
+        violation_fpgas.push_back(i);
+        violation_fpgas_res.push_back(violation_res);
+      }
+    }
+  }
+
+  static void get_single_fpga_violations(
+      const Eigen::VectorXi &resources,
+      const Eigen::VectorXi &required_resources,
+      std::vector<int> &violation_res) {
+    for (int i = 0; i < 8; i++) {
+      if (required_resources[i] > resources[i]) {
+        violation_res.push_back(i);
+      }
+    }
+  }
+
+  static void get_single_fpga_violations(
+      const Eigen::VectorXi &resources,
+      const std::unordered_set<int> &assignment, const std::vector<Node> &nodes,
+      std::vector<int> &violation_res) {
+    Eigen::VectorXi total_res = Eigen::VectorXi::Zero(8);
+    for (const auto &x : assignment) {
+      total_res += nodes[x].resources;
+    }
+    for (int i = 0; i < 8; i++) {
+      if (total_res[i] > resources[i]) {
+        violation_res.push_back(i);
+      }
+    }
+  }
+
+  // hop相关
+
+  static bool check_all_hops(
+      const std::vector<Net> &nets, const std::vector<int> &parts,
+      const std::vector<std::vector<int>> &dist, const int max_hops) {
+    for (auto &net : nets) {
+      if (!check_single_hop(net, parts, dist, max_hops)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool check_single_hop(
+      const Net &net, const std::vector<int> &parts,
+      const std::vector<std::vector<int>> &dist, const int max_hops) {
+    int src_fpga = parts[net.nodes[0]];
+    std::unordered_set<int> involved_fpgas;
+    int hop_count = 0;
+    for (auto &node : net.nodes) {
+      if (involved_fpgas.find(parts[node]) == involved_fpgas.end()) {
+        involved_fpgas.insert(parts[node]);
+        hop_count += dist[src_fpga][parts[node]];
+        if (hop_count > max_hops) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   static int get_total_hop_length(
       const std::vector<Net> &nets, const std::vector<int> &parts,
       const std::vector<std::vector<int>> &dist, const int max_hops,
-      int &violation_count) {
+      std::vector<int> &violation_nets) {
     int total_hop_length = 0;
-    for (const auto &net : nets) {
-      int hop_count = get_single_hop_count(net, parts, dist);
-      if (hop_count == -1) {
-        continue;
-      }
+    for (int i = 0; i < nets.size(); i++) {
+      int hop_count = get_single_hop_count(nets[i], parts, dist);
       if (hop_count > max_hops) {
-        violation_count++;
+        violation_nets.push_back(i);
       }
-      total_hop_length += hop_count * net.weight;
+      total_hop_length += hop_count * nets[i].weight;
     }
     return total_hop_length;
+  }
+
+  static int get_single_hop_length(
+      const Net &net, const std::vector<int> &parts,
+      const std::vector<std::vector<int>> &dist) {
+    return get_single_hop_count(net, parts, dist) * net.weight;
   }
 
   static int get_single_hop_count(
       const Net &net, const std::vector<int> &parts,
       const std::vector<std::vector<int>> &dist) {
     int src_fpga = parts[net.nodes[0]];
-    std::set<int> involved_fpgas;
-    for (auto &node : net.nodes) {
-      involved_fpgas.insert(parts[node]);
-    }
-    if (involved_fpgas.size() == 1) {
-      return -1;
-    }
-    involved_fpgas.erase(src_fpga);
+    std::unordered_set<int> involved_fpgas;
     int hop_count = 0;
-    for (const auto &dst_fpga : involved_fpgas) {
-      hop_count += dist[src_fpga][dst_fpga];
+    for (auto &node : net.nodes) {
+      if (involved_fpgas.find(parts[node]) == involved_fpgas.end()) {
+        involved_fpgas.insert(parts[node]);
+        hop_count += dist[src_fpga][parts[node]];
+      }
     }
     return hop_count;
   }
