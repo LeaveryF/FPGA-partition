@@ -358,7 +358,7 @@ private:
 
     // info
     std::cout << "Finish reading file " << file_path << ", " << fpgas.num_edges
-              << " arcs." << std::endl;
+              << " (as) directed arcs." << std::endl;
     std::cout << "Allowed max hop: " << fpgas.max_hops << std::endl;
     std::cout << "Topo: " << std::endl;
     for (int i = 0; i < fpgas.size; i++) {
