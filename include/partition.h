@@ -32,7 +32,10 @@ private:
   bool mt_log = true; // log
   std::string mt_out_file = "mt_results.txt"; // mt结果文件
 
-  // only when use_mt_lib is false
+  // only when use_mt_lib is true
+  bool mt_lib_use_file = false;
+
+  // only when use_mt_lib is false  or  mt_lib_use_file is true
   std::string mt_bin_path = "./MtKaHyPar"; // mt可执行文件路径
   std::string mt_in_hypergraph_file = "mt_input_hypergraph.txt"; // 超图
   std::string mt_in_target_graph_file = "mt_input_target_graph.txt"; // 目标图
@@ -76,17 +79,24 @@ private:
     // Set seed
     mt_kahypar_set_seed(this->mt_seed);
 
-    // Construct hypergraph
     mt_kahypar_hypergraph_t hypergraph; // 超图
-    Utils::construct_mt_hypergraph(finest, hypergraph, this->mt_preset);
-    // hypergraph = mt_kahypar_read_hypergraph_from_file(
-    //     "./mt_input_hypergraph.txt", DETERMINISTIC, HMETIS);
-
-    // Construct target graph
     mt_kahypar_target_graph_t *target_graph; // 目标图
-    Utils::construct_mt_target_graph(fpgas, &target_graph);
-    // target_graph =
-    //     mt_kahypar_read_target_graph_from_file("./mt_input_target_graph.txt");
+    if (this->mt_lib_use_file) {
+      // Construct hypergraph
+      IO::write_mt_input_hypergraph_file(this->mt_in_hypergraph_file, finest);
+      hypergraph = mt_kahypar_read_hypergraph_from_file(
+          this->mt_in_hypergraph_file.c_str(), this->mt_preset, HMETIS);
+      // Construct target graph
+      IO::write_mt_input_target_graph_file(
+          this->mt_in_target_graph_file, fpgas);
+      target_graph = mt_kahypar_read_target_graph_from_file(
+          this->mt_in_target_graph_file.c_str());
+    } else {
+      // Construct hypergraph
+      Utils::construct_mt_hypergraph(finest, hypergraph, this->mt_preset);
+      // Construct target graph
+      Utils::construct_mt_target_graph(fpgas, &target_graph);
+    }
 
     // Map hypergraph onto target graph
     mt_kahypar_partitioned_hypergraph_t partitioned_hg =
