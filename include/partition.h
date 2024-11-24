@@ -188,23 +188,60 @@ private:
 
 class Trimmer {
 public:
-  static void
-  trim(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
+  void trim(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
     std::cout << "Trimming partition results..." << std::endl << std::endl;
 
-    // 检查约束
-    std::cout << "Current results report: " << std::endl;
-    check(finest, fpgas, parts);
-
     // 微调
-
-    // 最终检查
-    // std::cout << "Final results report" << std::endl;
-    // check(finest, fpgas, parts);
   }
 
 private:
+};
+
+class LogicalReplicator {
+public:
+  void
+  replicate(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {}
+
+private:
+};
+
+class Partition {
+public:
   static void
+  partition(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
+    // mt-kahypar partition
+    MtPartitioner mt_partitioner;
+    mt_partitioner.mt_partition(finest, fpgas, parts);
+    bool satisfied = check(finest, fpgas, parts);
+
+    // trim
+    // if (!satisfied) {
+    //   Trimmer trimmer;
+    //   trimmer.trim(finest, fpgas, parts);
+    //   satisfied = check(finest, fpgas, parts);
+    // }
+    // if (!satisfied) {
+    //   std::cerr << "Trimer gave the wrong answer, Partition failed."
+    //             << std::endl;
+    //   exit(1);
+    // }
+
+    // logical replicate
+    // LogicalReplicator logical_replicator;
+    // logical_replicator.replicate(finest, fpgas, parts);
+    // satisfied = check(finest, fpgas, parts);
+    // if (!satisfied) {
+    //   std::cerr << "Logical replicator gave the wrong answer, Partition
+    //   failed."
+    //             << std::endl;
+    //   exit(1);
+    // }
+
+    std::cout << "Finish partition." << std::endl << std::endl;
+  }
+
+private:
+  static bool
   check(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
     // 获取 分组 和 资源向量
     // todo 根据使用何种微调策略 调整代码结构
@@ -266,8 +303,10 @@ private:
         fpgas.resources, required_resources, violation_fpgas,
         violation_fpgas_res);
 
+    bool res_satisfied = false;
     if (violation_fpgas.size() == 0) {
       std::cout << "Resources satisfied!" << std::endl;
+      res_satisfied = true;
     } else {
       std::cout << violation_fpgas.size() << " violation fpgas: " << std::endl;
       for (int i = 0; i < violation_fpgas.size(); i++) {
@@ -287,8 +326,10 @@ private:
     std::cout << "Total hop length: " << total_hop_length << std::endl
               << std::endl;
 
+    bool hop_satisfied = false;
     if (violation_nets.size() == 0) {
       std::cout << "Hops satisfied!" << std::endl;
+      hop_satisfied = true;
     } else {
       std::cout << violation_nets.size() << " violation nets: " << std::endl;
       for (auto i : violation_nets) {
@@ -297,21 +338,7 @@ private:
       std::cout << std::endl;
     }
     std::cout << std::endl;
-  }
-};
 
-class Partition {
-public:
-  static void
-  partition(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
-    // mt-kahypar partition
-    MtPartitioner mt_partitioner;
-    mt_partitioner.mt_partition(finest, fpgas, parts);
-
-    // trim
-    Trimmer trimmer;
-    trimmer.trim(finest, fpgas, parts);
-
-    std::cout << "Finish partition." << std::endl << std::endl;
+    return res_satisfied && hop_satisfied;
   }
 };
