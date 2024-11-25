@@ -23,8 +23,8 @@ int main(int argc, char *argv[]) {
   if (use_file) {
     // Load Hypergraph
     hypergraph = mt_kahypar_read_hypergraph_from_file(
-        "./instances/hypergraph_with_node_and_edge_weights.hgr", DETERMINISTIC,
-        HMETIS);
+        "../../instances/hypergraph_with_node_and_edge_weights.hgr",
+        DETERMINISTIC, HMETIS);
   } else {
     // In the following, we construct a hypergraph with 7 nodes and 4 hyperedges
     const mt_kahypar_hypernode_id_t num_nodes = 7;
