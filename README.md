@@ -68,10 +68,12 @@ cd build/bin/ # 切换到可执行文件目录下
 - libmtkahypar.h: mtkahypar库的头文件
 - libmtkahypartypes.h: mtkahypar类型的头文件
 
-8. lib/: 外部库
+8. instances/: 实例文件 mt项目中的图和超图实例数据
+
+9. lib/: 外部库
 - 目前只包含libmtkahypar.so
 
-9. scripts/: 脚本文件  
+10. scripts/: 脚本文件  
 - scripts/evaluate.sh:  
 运行评估器evaluator  
 需在build/bin/目录下运行  
@@ -101,7 +103,7 @@ cd build/bin/ # 切换到可执行文件目录下
 如需更新evaluator可运行此脚本  
 也可以下载服务器上的其他文件  
 
-10. src/: 源文件
+11. src/: 源文件
 
 ## 赛题服务器相关说明
 
