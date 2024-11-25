@@ -3,10 +3,17 @@
 # 使用-t参数指定测试数据路径 使用-s参数指定输出路径  
 # 会在build/bin/目录下生成结果文件design.fpga.out  
 if [ ! -z "$1" ]; then
-  ./partitioner \
-    -t ../../data/case0$1 \
-    -s ./design.fpga.out \
-    | tee -a log.txt
+  if [ $1 -eq 0 ]; then
+    ./partitioner \
+      -t ../../data/sample01 \
+      -s ./design.fpga.out \
+      | tee -a log.txt
+  else
+    ./partitioner \
+      -t ../../data/case0$1 \
+      -s ./design.fpga.out \
+      | tee -a log.txt
+  fi
 else
   ./partitioner \
     -t ../../data/case02 \

@@ -3,9 +3,15 @@
 # 使用-t参数指定测试数据路径 使用-s参数指定输出的design.fpga.out文件路径  
 # 其功能是评估design.fpga.out结果是否合法  
 if [ ! -z "$1" ]; then
-  ../../etc/evaluator \
-    -t ../../data/case0$1 \
-    -s ./design.fpga.out
+  if [ $1 -eq 0 ]; then
+    ../../etc/evaluator \
+      -t ../../data/sample01 \
+      -s ./design.fpga.out
+  else
+    ../../etc/evaluator \
+      -t ../../data/case0$1 \
+      -s ./design.fpga.out
+  fi
 else
   ../../etc/evaluator \
     -t ../../data/case02 \
