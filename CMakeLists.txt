@@ -13,5 +13,5 @@ link_directories(${CMAKE_SOURCE_DIR}/lib)
 add_executable(partitioner ${SOURCES})
 target_link_libraries(partitioner mtkahypar)
 
-# add_executable(test_mt ${CMAKE_SOURCE_DIR}/examples/map_hypergraph_onto_target_graph.cc)
-# target_link_libraries(test_mt mtkahypar)
+add_executable(test_mt ${CMAKE_SOURCE_DIR}/examples/map_hypergraph_onto_target_graph.cc)
+target_link_libraries(test_mt mtkahypar)

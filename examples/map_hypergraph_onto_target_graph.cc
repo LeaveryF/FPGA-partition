@@ -18,13 +18,74 @@ int main(int argc, char *argv[]) {
   // Set seed
   // mt_kahypar_set_seed(0);
 
-  // Load Hypergraph
-  mt_kahypar_hypergraph_t hypergraph = mt_kahypar_read_hypergraph_from_file(
-      "./mt_input_hypergraph.txt", DETERMINISTIC, HMETIS);
+  mt_kahypar_hypergraph_t hypergraph;
+  bool use_file = true;
+  if (use_file) {
+    // Load Hypergraph
+    hypergraph = mt_kahypar_read_hypergraph_from_file(
+        "./instances/hypergraph_with_node_and_edge_weights.hgr", DETERMINISTIC,
+        HMETIS);
+  } else {
+    // In the following, we construct a hypergraph with 7 nodes and 4 hyperedges
+    const mt_kahypar_hypernode_id_t num_nodes = 7;
+    const mt_kahypar_hyperedge_id_t num_hyperedges = 4;
+
+    // The hyperedge indices points to the hyperedge vector and defines the
+    // the ranges containing the pins of each hyperedge
+    std::unique_ptr<size_t[]> hyperedge_indices = std::make_unique<size_t[]>(5);
+    hyperedge_indices[0] = 0;
+    hyperedge_indices[1] = 2;
+    hyperedge_indices[2] = 6;
+    hyperedge_indices[3] = 9;
+    hyperedge_indices[4] = 12;
+
+    std::unique_ptr<mt_kahypar_hyperedge_id_t[]> hyperedges =
+        std::make_unique<mt_kahypar_hyperedge_id_t[]>(12);
+    // First hyperedge contains nodes with ID 0 and 2
+    hyperedges[0] = 0;
+    hyperedges[1] = 2;
+    // Second hyperedge contains nodes with ID 0, 1, 3 and 4
+    hyperedges[2] = 0;
+    hyperedges[3] = 1;
+    hyperedges[4] = 3;
+    hyperedges[5] = 4;
+    // Third hyperedge contains nodes with ID 3, 4 and 6
+    hyperedges[6] = 3;
+    hyperedges[7] = 4;
+    hyperedges[8] = 6;
+    // Fourth hyperedge contains nodes with ID 2, 5 and 6
+    hyperedges[9] = 2;
+    hyperedges[10] = 5;
+    hyperedges[11] = 6;
+
+    // Define node weights
+    std::unique_ptr<mt_kahypar_hypernode_weight_t[]> node_weights =
+        std::make_unique<mt_kahypar_hypernode_weight_t[]>(7);
+    node_weights[0] = 5;
+    node_weights[1] = 8;
+    node_weights[2] = 2;
+    node_weights[3] = 3;
+    node_weights[4] = 4;
+    node_weights[5] = 9;
+    node_weights[6] = 8;
+
+    // Define hyperedge weights
+    std::unique_ptr<mt_kahypar_hyperedge_weight_t[]> hyperedge_weights =
+        std::make_unique<mt_kahypar_hyperedge_weight_t[]>(4);
+    hyperedge_weights[0] = 4;
+    hyperedge_weights[1] = 2;
+    hyperedge_weights[2] = 3;
+    hyperedge_weights[3] = 8;
+
+    // Construct hypergraph for DEFAULT preset
+    hypergraph = mt_kahypar_create_hypergraph(
+        DEFAULT, num_nodes, num_hyperedges, hyperedge_indices.get(),
+        hyperedges.get(), hyperedge_weights.get(), node_weights.get());
+  }
 
   // Read target graph file
   mt_kahypar_target_graph_t *target_graph =
-      mt_kahypar_read_target_graph_from_file("./mt_input_target_graph.txt");
+      mt_kahypar_read_target_graph_from_file("../../examples/target.graph");
 
   // Map hypergraph onto target graph
   mt_kahypar_partitioned_hypergraph_t partitioned_hg =

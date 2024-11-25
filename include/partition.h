@@ -33,7 +33,7 @@ private:
   std::string mt_out_file = "mt_results.txt"; // mt结果文件
 
   // only when use_mt_lib is true
-  bool mt_lib_use_file = false;
+  bool mt_lib_use_file = true;
 
   // only when use_mt_lib is false  or  mt_lib_use_file is true
   std::string mt_bin_path = "./MtKaHyPar"; // mt可执行文件路径
