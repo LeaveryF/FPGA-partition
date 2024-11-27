@@ -28,18 +28,23 @@ int main(int argc, char *argv[]) {
         hgr_file.c_str(), DETERMINISTIC, HMETIS);
   } else {
     std::ifstream fin(hgr_file);
+    std::string line;
+
+    std::getline(fin, line);
+    std::istringstream iss(line);
+
     int m, n, sum = 0;
-    fin >> m >> n;
-    std::vector<std::vector<int>> edge_vec(m);
-    for (int i = 0; i < m; i++) {
-      std::string line;
-      std::getline(fin, line);
+    iss >> m >> n;
+    std::vector<std::vector<int>> edges;
+    while (std::getline(fin, line)) {
       std::istringstream iss(line);
+      std::vector<int> edge;
       int v;
       while (iss >> v) {
-        edge_vec[i].push_back(v - 1);
+        edge.push_back(v - 1);
       }
-      sum += edge_vec[i].size();
+      sum += edge.size();
+      edges.push_back(edge);
     }
 
     std::unique_ptr<size_t[]> hyperedge_indices =
@@ -47,14 +52,14 @@ int main(int argc, char *argv[]) {
     size_t cnt = 0;
     for (int i = 0; i < m; i++) {
       hyperedge_indices[i] = cnt;
-      cnt += edge_vec[i].size();
+      cnt += edges[i].size();
     }
     hyperedge_indices[m] = cnt;
 
     std::unique_ptr<mt_kahypar_hyperedge_id_t[]> hyperedges =
         std::make_unique<mt_kahypar_hyperedge_id_t[]>(sum);
     int index = 0;
-    for (const auto &v : edge_vec) {
+    for (const auto &v : edges) {
       for (const auto &e : v) {
         hyperedges[index++] = e;
       }
