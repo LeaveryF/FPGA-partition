@@ -30,15 +30,12 @@ private:
   double mt_eps = 0; // imbalance // will be assigned
   int mt_seed = 0; // seed
   bool mt_log = true; // log
-  std::string mt_out_file = "mt_results.txt"; // mt结果文件
-
-  // only when use_mt_lib is true
-  bool mt_lib_use_file = true;
-
-  // only when use_mt_lib is false  or  mt_lib_use_file is true
   std::string mt_bin_path = "./MtKaHyPar"; // mt可执行文件路径
   std::string mt_in_hypergraph_file = "mt_input_hypergraph.txt"; // 超图
   std::string mt_in_target_graph_file = "mt_input_target_graph.txt"; // 目标图
+  std::string mt_out_file = "mt_results.txt"; // mt结果文件
+  bool mt_lib_use_files = false; // only when use_mt_lib is true
+  bool mt_lib_output_files = true; // only when mt_lib_use_files is false
 
   void init(const Graph &finest, const FPGA &fpgas) {
     // 实际上这样取eps也并没什么用 但至少是动态变化的了
@@ -81,7 +78,7 @@ private:
 
     mt_kahypar_hypergraph_t hypergraph; // 超图
     mt_kahypar_target_graph_t *target_graph; // 目标图
-    if (this->mt_lib_use_file) {
+    if (this->mt_lib_use_files) {
       // Construct hypergraph
       IO::write_mt_input_hypergraph_file(this->mt_in_hypergraph_file, finest);
       hypergraph = mt_kahypar_read_hypergraph_from_file(
@@ -93,8 +90,15 @@ private:
           this->mt_in_target_graph_file.c_str());
     } else {
       // Construct hypergraph
+      if (this->mt_lib_output_files) {
+        IO::write_mt_input_hypergraph_file(this->mt_in_hypergraph_file, finest);
+      }
       Utils::construct_mt_hypergraph(finest, hypergraph, this->mt_preset);
       // Construct target graph
+      if (this->mt_lib_output_files) {
+        IO::write_mt_input_target_graph_file(
+            this->mt_in_target_graph_file, fpgas);
+      }
       Utils::construct_mt_target_graph(fpgas, &target_graph);
     }
 
