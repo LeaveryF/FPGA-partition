@@ -26,6 +26,8 @@ public:
 
 private:
   bool use_mt_lib = true; // 使用mt的lib还是mt的bin
+  bool mt_lib_use_files = false; // only when use_mt_lib is true
+  bool mt_lib_output_files = true; // only when mt_lib_use_files is false
   mt_kahypar_preset_type_t mt_preset = DETERMINISTIC; // preset type
   double mt_eps = 0; // imbalance // will be assigned
   int mt_seed = 0; // seed
@@ -34,8 +36,6 @@ private:
   std::string mt_in_hypergraph_file = "mt_input_hypergraph.txt"; // 超图
   std::string mt_in_target_graph_file = "mt_input_target_graph.txt"; // 目标图
   std::string mt_out_file = "mt_results.txt"; // mt结果文件
-  bool mt_lib_use_files = false; // only when use_mt_lib is true
-  bool mt_lib_output_files = true; // only when mt_lib_use_files is false
 
   void init(const Graph &finest, const FPGA &fpgas) {
     // 实际上这样取eps也并没什么用 但至少是动态变化的了
