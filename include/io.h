@@ -132,7 +132,7 @@ private:
     fpgas.lower_res.resize(8);
     fpgas.lower_res =
         Eigen::VectorXi::Constant(8, std::numeric_limits<int>::max());
-    while (getline(file, line)) {
+    while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string name;
       int max_interconnects;
@@ -293,7 +293,7 @@ private:
     std::getline(file, line); // Read max hop
     fpgas.max_hops = std::stoi(line);
     fpgas.topology.resize(fpgas.size, std::vector<int>(fpgas.size)); // init
-    while (getline(file, line)) {
+    while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string s1, s2;
       ss >> s1 >> s2; // read topo
