@@ -2,12 +2,12 @@
 # 需在build/bin/目录下运行  
 # 根据需要修改参数
 ../../bin/MtKaHyPar \
-  -h ./mt_input_hypergraph.txt \
+  -h ../../instances/hypergraph_with_node_and_edge_weights.hgr \
   --preset-type=deterministic \
   -t 4 \
   -k 8 \
   -e 0.03 \
-  -g ./mt_input_target_graph.txt \
+  -g ../../examples/target.graph \
   -o steiner_tree \
 
   # -h ../../examples/ibm01.hgr \
@@ -17,6 +17,7 @@
   # -h ../../instances/powersim.mtx.hgr \
   # -h ../../instances/sat14_atco_enc1_opt2_10_16.cnf.primal.hgr \
   # -h ../../instances/test_instance.hgr \
+  # -h ../../instances/hypergraph_with_node_and_edge_weights.hgr \
   # -h ./mt_input_hypergraph.txt \
 
   # -g ../../examples/target.graph \

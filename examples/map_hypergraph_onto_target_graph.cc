@@ -1,5 +1,7 @@
+#include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -20,67 +22,47 @@ int main(int argc, char *argv[]) {
 
   mt_kahypar_hypergraph_t hypergraph;
   bool use_file = true;
+  std::string hgr_file = "../../examples/ibm01.hgr";
   if (use_file) {
-    // Load Hypergraph
     hypergraph = mt_kahypar_read_hypergraph_from_file(
-        "../../instances/hypergraph_with_node_and_edge_weights.hgr",
-        DETERMINISTIC, HMETIS);
+        hgr_file.c_str(), DETERMINISTIC, HMETIS);
   } else {
-    // In the following, we construct a hypergraph with 7 nodes and 4 hyperedges
-    const mt_kahypar_hypernode_id_t num_nodes = 7;
-    const mt_kahypar_hyperedge_id_t num_hyperedges = 4;
+    std::ifstream fin(hgr_file);
+    int m, n, sum = 0;
+    fin >> m >> n;
+    std::vector<std::vector<int>> edge_vec(m);
+    for (int i = 0; i < m; i++) {
+      std::string line;
+      std::getline(fin, line);
+      std::istringstream iss(line);
+      int v;
+      while (iss >> v) {
+        edge_vec[i].push_back(v - 1);
+      }
+      sum += edge_vec[i].size();
+    }
 
-    // The hyperedge indices points to the hyperedge vector and defines the
-    // the ranges containing the pins of each hyperedge
-    std::unique_ptr<size_t[]> hyperedge_indices = std::make_unique<size_t[]>(5);
-    hyperedge_indices[0] = 0;
-    hyperedge_indices[1] = 2;
-    hyperedge_indices[2] = 6;
-    hyperedge_indices[3] = 9;
-    hyperedge_indices[4] = 12;
+    std::unique_ptr<size_t[]> hyperedge_indices =
+        std::make_unique<size_t[]>(m + 1);
+    size_t cnt = 0;
+    for (int i = 0; i < m; i++) {
+      hyperedge_indices[i] = cnt;
+      cnt += edge_vec[i].size();
+    }
+    hyperedge_indices[m] = cnt;
 
     std::unique_ptr<mt_kahypar_hyperedge_id_t[]> hyperedges =
-        std::make_unique<mt_kahypar_hyperedge_id_t[]>(12);
-    // First hyperedge contains nodes with ID 0 and 2
-    hyperedges[0] = 0;
-    hyperedges[1] = 2;
-    // Second hyperedge contains nodes with ID 0, 1, 3 and 4
-    hyperedges[2] = 0;
-    hyperedges[3] = 1;
-    hyperedges[4] = 3;
-    hyperedges[5] = 4;
-    // Third hyperedge contains nodes with ID 3, 4 and 6
-    hyperedges[6] = 3;
-    hyperedges[7] = 4;
-    hyperedges[8] = 6;
-    // Fourth hyperedge contains nodes with ID 2, 5 and 6
-    hyperedges[9] = 2;
-    hyperedges[10] = 5;
-    hyperedges[11] = 6;
+        std::make_unique<mt_kahypar_hyperedge_id_t[]>(sum);
+    int index = 0;
+    for (const auto &v : edge_vec) {
+      for (const auto &e : v) {
+        hyperedges[index++] = e;
+      }
+    }
 
-    // Define node weights
-    std::unique_ptr<mt_kahypar_hypernode_weight_t[]> node_weights =
-        std::make_unique<mt_kahypar_hypernode_weight_t[]>(7);
-    node_weights[0] = 5;
-    node_weights[1] = 8;
-    node_weights[2] = 2;
-    node_weights[3] = 3;
-    node_weights[4] = 4;
-    node_weights[5] = 9;
-    node_weights[6] = 8;
-
-    // Define hyperedge weights
-    std::unique_ptr<mt_kahypar_hyperedge_weight_t[]> hyperedge_weights =
-        std::make_unique<mt_kahypar_hyperedge_weight_t[]>(4);
-    hyperedge_weights[0] = 4;
-    hyperedge_weights[1] = 2;
-    hyperedge_weights[2] = 3;
-    hyperedge_weights[3] = 8;
-
-    // Construct hypergraph for DEFAULT preset
     hypergraph = mt_kahypar_create_hypergraph(
-        DEFAULT, num_nodes, num_hyperedges, hyperedge_indices.get(),
-        hyperedges.get(), hyperedge_weights.get(), node_weights.get());
+        DETERMINISTIC, n, m, hyperedge_indices.get(), hyperedges.get(), nullptr,
+        nullptr);
   }
 
   // Read target graph file
