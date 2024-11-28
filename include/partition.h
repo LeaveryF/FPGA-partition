@@ -31,8 +31,8 @@ private:
   mt_kahypar_preset_type_t mt_preset = DETERMINISTIC; // preset type
   double mt_eps = 0; // imbalance // will be assigned
   int mt_seed = 0; // seed
-  bool mt_log = true; // log
-  std::string mt_bin_path = "./MtKaHyPar"; // mt可执行文件路径
+  bool mt_log = false; // log
+  std::string mt_bin_path = "../../bin/MtKaHyPar"; // mt可执行文件路径
   std::string mt_in_hypergraph_file = "mt_input_hypergraph.txt"; // 超图
   std::string mt_in_target_graph_file = "mt_input_target_graph.txt"; // 目标图
   std::string mt_out_file = "mt_results.txt"; // mt结果文件
@@ -125,8 +125,11 @@ private:
     const double steiner_tree_metric =
         mt_kahypar_steiner_tree(partitioned_hg, target_graph);
 
+    if (this->mt_log) {
+      std::cout << std::endl;
+    }
+
     // Output Results
-    std::cout << std::endl;
     std::cout << "Partitioning Results:" << std::endl;
     std::cout << "Imbalance           = " << imbalance << std::endl;
     std::cout << "Steiner Tree Metric = " << steiner_tree_metric << std::endl;

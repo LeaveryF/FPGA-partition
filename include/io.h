@@ -275,7 +275,8 @@ private:
     std::cout << "Max pins: " << max_pins << "(" << max_node_name << "), "
               << "Ave pins: " << (double)finest.pin_size / finest.nets.size()
               << std::endl
-              << "Max used: " << max_used << "(" << max_used_name << ")"
+              << "Max used: " << max_used << "(" << max_used_name << "), "
+              << "Ave used: " << (double)finest.pin_size / finest.nodes.size()
               << std::endl
               << std::endl;
   }
