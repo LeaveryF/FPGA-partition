@@ -133,10 +133,10 @@ private:
     std::cout << "Partitioning Results:" << std::endl;
     std::cout << "Imbalance           = " << imbalance << std::endl;
     std::cout << "Steiner Tree Metric = " << steiner_tree_metric << std::endl;
-    for (size_t i = 0; i < fpgas.size; i++) {
-      std::cout << "Weight of Block " << i << "   = " << block_weights[i]
-                << std::endl;
-    }
+    // for (size_t i = 0; i < fpgas.size; i++) {
+    //   std::cout << "Weight of Block " << i << "   = " << block_weights[i]
+    //             << std::endl;
+    // }
     std::cout << std::endl;
 
     // destroy
@@ -195,10 +195,17 @@ private:
 
 class Trimmer {
 public:
-  void trim(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
-    std::cout << "Trimming partition results..." << std::endl << std::endl;
+  void trim_res(
+      const Graph &finest, const FPGA &fpgas, std::vector<int> &parts,
+      std::vector<std::unordered_set<int>> &assignments) {
+    std::cout << "Trimming res..." << std::endl << std::endl;
 
     // 微调
+  }
+
+  void
+  trim_hop(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
+    std::cout << "Trimming hop..." << std::endl << std::endl;
   }
 
 private:
@@ -219,18 +226,34 @@ public:
     // mt-kahypar partition
     MtPartitioner mt_partitioner;
     mt_partitioner.mt_partition(finest, fpgas, parts);
-    bool satisfied = check(finest, fpgas, parts);
 
-    // trim
-    // if (!satisfied) {
-    //   Trimmer trimmer;
-    //   trimmer.trim(finest, fpgas, parts);
-    //   satisfied = check(finest, fpgas, parts);
+    // 获取 分组 和 资源向量
+    std::vector<std::unordered_set<int>> assignments(fpgas.size);
+    Utils::get_assignments(parts, assignments);
+    std::vector<Eigen::VectorXi> required_res;
+    Utils::get_required_res(assignments, finest.nodes, required_res);
+
+    bool res_satisfied = check_res(finest, fpgas, required_res, true);
+    bool hop_satisfied = check_hop(finest, fpgas, parts, true);
+
+    // trim res
+    Trimmer trimmer;
+    if (!res_satisfied) {
+      trimmer.trim_res(finest, fpgas, parts, assignments);
+      res_satisfied = check_res(finest, fpgas, required_res, false);
+    }
+    if (!res_satisfied) {
+      std::cerr << "Trim res failed." << std::endl;
+      exit(1);
+    }
+
+    // trim hop
+    // if (!hop_satisfied) {
+    //   trimmer.trim_hop(finest, fpgas, parts);
+    //   hop_satisfied = check_hop(finest, fpgas, parts, false);
     // }
-    // if (!satisfied) {
-    //   std::cerr << "Trimer gave the wrong answer, Partition failed."
-    //             << std::endl;
-    //   exit(1);
+    // if (!hop_satisfied) {
+    //   std::cerr << "Trim hop failed." << std::endl;
     // }
 
     // logical replicate
@@ -248,72 +271,33 @@ public:
   }
 
 private:
-  static bool
-  check(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
-    // 获取 分组 和 资源向量
-    // todo 根据使用何种微调策略 调整代码结构
-    std::vector<std::unordered_set<int>> assignments(fpgas.size);
-    Utils::get_assignments(parts, assignments);
-    std::vector<Eigen::VectorXi> required_resources;
-    Utils::get_required_resources(
-        assignments, finest.nodes, required_resources);
+  static bool check_res(
+      const Graph &finest, const FPGA &fpgas,
+      const std::vector<Eigen::VectorXi> &required_res,
+      bool print_flag) { // 检查资源
+    if (print_flag) {
+      // Utils::print_res_mat("FPGA res", "FPGA", fpgas.resources);
+      // Utils::print_res_vec("Total", fpgas.total_res);
+      // std::cout << std::endl;
 
-    // 检查资源
-    std::cout << "FPGA res: " << std::endl;
-    for (int i = 0; i < fpgas.size; i++) {
-      std::cout << "FPGA " << i << ": ";
-      for (int j = 0; j < 8; j++) {
-        std::cout << fpgas.resources[i][j] << ' ';
-      }
-      std::cout << std::endl;
-    }
-    std::cout << "Total: ";
-    for (int i = 0; i < 8; i++) {
-      std::cout << fpgas.total_res[i] << ' ';
-    }
-    std::cout << std::endl << std::endl;
+      // Utils::print_res_mat("Required res", "Block", required_res);
+      // Utils::print_res_vec("Total", finest.required_res);
+      // std::cout << std::endl;
 
-    std::cout << "Required res: " << std::endl;
-    for (int i = 0; i < fpgas.size; i++) {
-      std::cout << "Block " << i << ": ";
-      for (int j = 0; j < 8; j++) {
-        std::cout << required_resources[i][j] << ' ';
-      }
-      std::cout << std::endl;
+      // Utils::print_ratio_mat("Ratio", "Block", required_res,
+      // fpgas.resources); Utils::print_ratio_vec("Total", finest.required_res,
+      // fpgas.total_res); std::cout << std::endl;
     }
-    std::cout << "Total: ";
-    for (int i = 0; i < 8; i++) {
-      std::cout << finest.required_res[i] << ' ';
-    }
-    std::cout << std::endl << std::endl;
-
-    std::cout << "Ratio: " << std::endl;
-    for (int i = 0; i < fpgas.size; i++) {
-      std::cout << "Block " << i << ":\t";
-      for (int j = 0; j < 8; j++) {
-        std::cout << (double)required_resources[i][j] * 100 /
-                         fpgas.resources[i][j]
-                  << "%\t";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << "Total:  \t";
-    for (int i = 0; i < 8; i++) {
-      std::cout << (double)finest.required_res[i] * 100 / fpgas.total_res[i]
-                << "%\t";
-    }
-    std::cout << std::endl << std::endl;
 
     std::vector<int> violation_fpgas;
     std::vector<std::vector<int>> violation_fpgas_res;
     Utils::get_all_fpgas_res_violations(
-        fpgas.resources, required_resources, violation_fpgas,
-        violation_fpgas_res);
+        fpgas.resources, required_res, violation_fpgas, violation_fpgas_res);
 
-    bool res_satisfied = false;
+    bool satisfied = false;
     if (violation_fpgas.size() == 0) {
       std::cout << "Resources satisfied!" << std::endl;
-      res_satisfied = true;
+      satisfied = true;
     } else {
       std::cout << violation_fpgas.size() << " violation fpgas: " << std::endl;
       for (int i = 0; i < violation_fpgas.size(); i++) {
@@ -326,17 +310,22 @@ private:
     }
     std::cout << std::endl;
 
-    // 检查hop
+    return satisfied;
+  }
+
+  static bool check_hop(
+      const Graph &finest, const FPGA &fpgas, std::vector<int> &parts,
+      bool print_flag) { // 检查hop
     std::vector<int> violation_nets;
     int total_hop_length = Utils::get_total_hop_length(
         finest.nets, parts, fpgas.dist, fpgas.max_hops, violation_nets);
     std::cout << "Total hop length: " << total_hop_length << std::endl
               << std::endl;
 
-    bool hop_satisfied = false;
+    bool satisfied = false;
     if (violation_nets.size() == 0) {
       std::cout << "Hops satisfied!" << std::endl;
-      hop_satisfied = true;
+      satisfied = true;
     } else {
       std::cout << violation_nets.size() << " violation nets: " << std::endl;
       for (auto i : violation_nets) {
@@ -346,6 +335,6 @@ private:
     }
     std::cout << std::endl;
 
-    return res_satisfied && hop_satisfied;
+    return satisfied;
   }
 };

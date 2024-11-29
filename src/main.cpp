@@ -7,6 +7,7 @@
 
 int main(int argc, char *argv[]) {
   const auto startTotal = std::chrono::high_resolution_clock::now();
+  Utils::init_program();
 
   // 处理命令行参数
   const auto &[input_dir, output_file] = Utils::parse_cmd_options(argc, argv);

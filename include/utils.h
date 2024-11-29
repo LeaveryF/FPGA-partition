@@ -72,6 +72,10 @@ class Utils {
 public:
   // used by main.cpp
 
+  static void init_program() {
+    std::cout << std::fixed << std::setprecision(2);
+  }
+
   static std::pair<std::string, std::string>
   parse_cmd_options(int argc, char *argv[]) {
     static struct option long_options[] = {
@@ -136,8 +140,8 @@ public:
   static void print_time(
       const std::chrono::_V2::system_clock::time_point &start,
       const std::chrono::_V2::system_clock::time_point &end,
-      const std::string &str) {
-    std::cout << str << " time: " << std::fixed << std::setprecision(3)
+      const std::string &info_str) {
+    std::cout << info_str << " time: " << std::fixed << std::setprecision(3)
               << std::chrono::duration_cast<std::chrono::nanoseconds>(
                      end - start)
                          .count() *
@@ -224,16 +228,63 @@ public:
     }
   }
 
-  static void get_required_resources(
+  static void get_required_res(
       const std::vector<std::unordered_set<int>> &assignments,
       const std::vector<Node> &nodes,
-      std::vector<Eigen::VectorXi> &required_resources) {
+      std::vector<Eigen::VectorXi> &required_res) {
     for (int i = 0; i < assignments.size(); i++) {
       Eigen::VectorXi res = Eigen::VectorXi::Zero(8);
       for (const auto &x : assignments[i]) {
         res += nodes[x].resources;
       }
-      required_resources.push_back(res);
+      required_res.push_back(res);
+    }
+  }
+
+  // 输出资源信息
+
+  static void print_res_mat(
+      const std::string &info_str_1, const std::string &info_str_2,
+      const std::vector<Eigen::VectorXi> &res) {
+    std::cout << info_str_1 << ": " << std::endl;
+    for (int i = 0; i < res.size(); i++) {
+      std::cout << info_str_2 << ' ' << i << ": ";
+      for (int j = 0; j < 8; j++) {
+        std::cout << res[i][j] << ' ';
+      }
+      std::cout << std::endl;
+    }
+  }
+
+  static void
+  print_res_vec(const std::string &info_str, const Eigen::VectorXi res) {
+    std::cout << info_str << ": ";
+    for (int i = 0; i < 8; i++) {
+      std::cout << res[i] << ' ';
+    }
+    std::cout << std::endl;
+  }
+
+  static void print_ratio_mat(
+      const std::string &info_str_1, const std::string &info_str_2,
+      const std::vector<Eigen::VectorXi> &used,
+      const std::vector<Eigen::VectorXi> &total) {
+    std::cout << info_str_1 << ": " << std::endl;
+    for (int i = 0; i < used.size(); i++) {
+      std::cout << info_str_2 << ' ' << i << ":\t";
+      for (int j = 0; j < 8; j++) {
+        std::cout << (double)used[i][j] * 100 / total[i][j] << "%\t";
+      }
+      std::cout << std::endl;
+    }
+  }
+
+  static void print_ratio_vec(
+      const std::string &info_str, const Eigen::VectorXi &used,
+      const Eigen::VectorXi &total) {
+    std::cout << info_str << ":  \t";
+    for (int i = 0; i < 8; i++) {
+      std::cout << (double)used[i] * 100 / total[i] << "%\t";
     }
   }
 
@@ -241,10 +292,10 @@ public:
 
   static bool check_all_fpgas_resources(
       const std::vector<Eigen::VectorXi> &fpgas_resources,
-      const std::vector<Eigen::VectorXi> &required_resources) {
+      const std::vector<Eigen::VectorXi> &required_res) {
     for (int i = 0; i < fpgas_resources.size(); i++) {
       if (!Utils::check_single_fpga_resource(
-              fpgas_resources[i], required_resources[i])) {
+              fpgas_resources[i], required_res[i])) {
         return false;
       }
     }
@@ -265,9 +316,8 @@ public:
   }
 
   static bool check_single_fpga_resource(
-      const Eigen::VectorXi &resources,
-      const Eigen::VectorXi &required_resources) {
-    if ((resources - required_resources).minCoeff() < 0) {
+      const Eigen::VectorXi &resources, const Eigen::VectorXi &required_res) {
+    if ((resources - required_res).minCoeff() < 0) {
       return false;
     }
     return true;
@@ -289,13 +339,13 @@ public:
 
   static void get_all_fpgas_res_violations(
       const std::vector<Eigen::VectorXi> &fpgas_resources,
-      const std::vector<Eigen::VectorXi> &required_resources,
+      const std::vector<Eigen::VectorXi> &required_res,
       std::vector<int> &violation_fpgas,
       std::vector<std::vector<int>> &violation_fpgas_res) {
     for (int i = 0; i < fpgas_resources.size(); i++) {
       std::vector<int> violation_res;
       get_single_fpga_violations(
-          fpgas_resources[i], required_resources[i], violation_res);
+          fpgas_resources[i], required_res[i], violation_res);
       if (!violation_res.empty()) {
         violation_fpgas.push_back(i);
         violation_fpgas_res.push_back(violation_res);
@@ -321,11 +371,10 @@ public:
   }
 
   static void get_single_fpga_violations(
-      const Eigen::VectorXi &resources,
-      const Eigen::VectorXi &required_resources,
+      const Eigen::VectorXi &resources, const Eigen::VectorXi &required_res,
       std::vector<int> &violation_res) {
     for (int i = 0; i < 8; i++) {
-      if (required_resources[i] > resources[i]) {
+      if (required_res[i] > resources[i]) {
         violation_res.push_back(i);
       }
     }

@@ -154,15 +154,10 @@ private:
     }
     std::cout << "Finish reading file " << file_path << ", " << fpgas.size
               << " fpgas." << std::endl;
-    std::cout << "Total res: ";
-    for (int i = 0; i < 8; i++) {
-      std::cout << fpgas.total_res[i] << ' ';
-    }
+    // Utils::print_res_mat("FPGA res", "FPGA", fpgas.resources);
+    Utils::print_res_vec("Total res", fpgas.total_res);
     std::cout << std::endl;
-    std::cout << "Lower res: ";
-    for (int i = 0; i < 8; i++) {
-      std::cout << fpgas.lower_res[i] << ' ';
-    }
+    Utils::print_res_vec("Lower res", fpgas.lower_res);
     std::cout << std::endl << std::endl;
   }
 
@@ -211,18 +206,10 @@ private:
     }
     std::cout << "Finish reading file " << file_path << ", "
               << finest.nodes.size() << " nodes." << std::endl;
-    std::cout << "Required res: ";
-    for (int i = 0; i < 8; i++) {
-      std::cout << finest.required_res[i] << ' ';
-    }
+    Utils::print_res_vec("Required res", finest.required_res);
     std::cout << std::endl;
-    std::cout << "Ratio: ";
-    for (int i = 0; i < 8; i++) {
-      std::cout << std::fixed << std::setprecision(2)
-                << (double)finest.required_res[i] * 100 / fpga_total_res[i]
-                << "% ";
-    }
-    std::cout << std::endl << std::endl;
+    Utils::print_ratio_vec("Ratio", finest.required_res, fpga_total_res);
+    std::cout << std::endl;
   }
 
   static void read_design_net(
@@ -362,24 +349,25 @@ private:
     std::cout << "Finish reading file " << file_path << ", " << fpgas.num_edges
               << " (as) directed arcs." << std::endl;
     std::cout << "Allowed max hop: " << fpgas.max_hops << std::endl;
-    std::cout << "Topo: " << std::endl;
-    for (int i = 0; i < fpgas.size; i++) {
-      for (int j = 0; j < fpgas.size; j++) {
-        std::cout << fpgas.topology[i][j] << ' ';
-      }
-      std::cout << std::endl;
-    }
-    std::cout << "Dist: " << std::endl;
-    for (int i = 0; i < fpgas.size; i++) {
-      for (int j = 0; j < fpgas.size; j++) {
-        std::cout << fpgas.dist[i][j] << ' ';
-      }
-      std::cout << std::endl;
-    }
-    std::cout << "MaxDist: " << std::endl;
-    for (int i = 0; i < fpgas.size; i++) {
-      std::cout << fpgas.max_dist[i] << ' ';
-    }
-    std::cout << std::endl << std::endl;
+    // std::cout << "Topo: " << std::endl;
+    // for (int i = 0; i < fpgas.size; i++) {
+    //   for (int j = 0; j < fpgas.size; j++) {
+    //     std::cout << fpgas.topology[i][j] << ' ';
+    //   }
+    //   std::cout << std::endl;
+    // }
+    // std::cout << "Dist: " << std::endl;
+    // for (int i = 0; i < fpgas.size; i++) {
+    //   for (int j = 0; j < fpgas.size; j++) {
+    //     std::cout << fpgas.dist[i][j] << ' ';
+    //   }
+    //   std::cout << std::endl;
+    // }
+    // std::cout << "MaxDist: " << std::endl;
+    // for (int i = 0; i < fpgas.size; i++) {
+    //   std::cout << fpgas.max_dist[i] << ' ';
+    // }
+    // std::cout << std::endl;
+    std::cout << std::endl;
   }
 };
