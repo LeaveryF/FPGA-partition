@@ -234,6 +234,8 @@ private:
       Net net;
       net.weight = weight;
       net.nodes.push_back(node_map.at(src)); // 0 is src
+      // 关联边
+      finest.incident_edges[node_map.at(src)].push_back(finest.nets.size());
 
       std::string dest;
       while (ss >> dest) {
