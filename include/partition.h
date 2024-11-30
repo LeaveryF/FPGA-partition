@@ -330,10 +330,23 @@ public:
 
       int pre_total_nodes = assignments[i].size();
       std::unordered_set<int> visited_nodes;
+      int trim_cnt = 0;
       for (const auto &[node, j, gain] : gains_rank) {
         // 已访问过的节点
         if (visited_nodes.find(node) != visited_nodes.end()) {
           continue;
+        }
+        // 如果是自己 gain必是0 可以提前退出
+        if (i == j) {
+          // 如果资源已经足够
+          if (Utils::check_single_fpga_resource(
+                  fpgas.resources[i], required_res[i])) {
+            break;
+          }
+          // 否则 因为不能分配到资源已满的fpga上
+          else {
+            continue;
+          }
         }
         // 不能分配到资源已满的fpga上
         if (!Utils::check_single_fpga_resource(
@@ -347,6 +360,7 @@ public:
         assignments[i].erase(node);
         assignments[j].insert(node);
         parts[node] = j;
+        trim_cnt++;
         // 提前退出
         if (visited_nodes.size() == pre_total_nodes) {
           break;
@@ -363,12 +377,8 @@ public:
               fpgas.resources[i], required_res[i])) {
         std::cerr << "Trim res failed, res can't satisfied." << std::endl;
         exit(1);
-      }
-      // 一定每个结点都会被访问到
-      if (this->trim_res_of_all_fpgas &&
-          visited_nodes.size() != pre_total_nodes) {
-        std::cerr << "Trim res failed, missing nodes." << std::endl;
-        exit(1);
+      } else {
+        std::cout << "Sucessfully trim " << trim_cnt << " nodes." << std::endl;
       }
     }
     std::cout << std::endl;
@@ -404,14 +414,15 @@ public:
     std::vector<Eigen::VectorXi> required_res;
     Utils::get_required_res(assignments, finest.nodes, required_res);
 
-    bool res_satisfied = check_res(finest, fpgas, required_res, true);
+    bool res_satisfied =
+        check_res(finest, fpgas, required_res, assignments, true);
     bool hop_satisfied = check_hop(finest, fpgas, parts, true);
 
     // trim res
     Trimmer trimmer;
     if (!res_satisfied) {
       trimmer.trim_res(finest, fpgas, parts, assignments, required_res);
-      res_satisfied = check_res(finest, fpgas, required_res, true);
+      res_satisfied = check_res(finest, fpgas, required_res, assignments, true);
       hop_satisfied = check_hop(finest, fpgas, parts, false);
       if (!res_satisfied) {
         std::cerr << "Trim res failed." << std::endl;
@@ -445,7 +456,8 @@ public:
 private:
   static bool check_res(
       const Graph &finest, const FPGA &fpgas,
-      const std::vector<Eigen::VectorXi> &required_res, bool print_flag) {
+      const std::vector<Eigen::VectorXi> &required_res,
+      std::vector<std::unordered_set<int>> &assignments, bool print_flag) {
     // 检查资源
     if (print_flag) {
       Utils::print_res_mat("FPGA res", "FPGA", fpgas.resources);
@@ -458,6 +470,13 @@ private:
 
       Utils::print_ratio_mat("Ratio", "Block", required_res, fpgas.resources);
       Utils::print_ratio_vec("Total", finest.required_res, fpgas.total_res);
+      std::cout << std::endl;
+
+      std::cout << "Assignments size/Node count: " << std::endl;
+      for (int i = 0; i < fpgas.size; i++) {
+        std::cout << "Block " << i << ": " << assignments[i].size()
+                  << std::endl;
+      }
       std::cout << std::endl;
     }
 
