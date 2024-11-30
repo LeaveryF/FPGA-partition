@@ -25,6 +25,7 @@ public:
   // old: 点权定义为所有资源的代数和
   // new: 点权定义为占用比例最大的资源的比例乘以总资源
   int weight = 0; // 点权
+  int lower_weight = 0; // 点权下界
   Eigen::VectorXi resources; // 8种资源
 };
 
@@ -44,6 +45,7 @@ public:
 
   int pin_size = 0; // 引脚数
   Eigen::VectorXi required_res; // 总耗费资源
+  int node_weight_sum = 0; // 点权代数和
 };
 
 // 所有fpga
@@ -58,6 +60,7 @@ public:
 
   Eigen::VectorXi total_res; // 总资源
   Eigen::VectorXi lower_res; // 资源下界
+  Eigen::VectorXi upper_res; // 资源上界
 
   std::vector<int> max_dist; // 每个fpga到其他fpga的最大距离 // 仅用于求s_hat
   std::vector<std::vector<int>> dist; // 距离矩阵

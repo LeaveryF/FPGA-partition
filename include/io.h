@@ -132,6 +132,8 @@ private:
     fpgas.lower_res.resize(8);
     fpgas.lower_res =
         Eigen::VectorXi::Constant(8, std::numeric_limits<int>::max());
+    fpgas.upper_res.resize(8);
+    fpgas.upper_res = Eigen::VectorXi::Zero(8);
     while (std::getline(file, line)) {
       std::stringstream ss(line);
       std::string name;
@@ -148,6 +150,7 @@ private:
       fpgas.total_res += res;
       for (int i = 0; i < 8; i++) { // maybe it can use func in eigen
         fpgas.lower_res[i] = std::min(fpgas.lower_res[i], res[i]);
+        fpgas.upper_res[i] = std::max(fpgas.upper_res[i], res[i]);
       }
 
       fpgas.resources.push_back(res); // add to fpgas
@@ -158,6 +161,8 @@ private:
     Utils::print_res_vec("Total res", fpgas.total_res);
     std::cout << std::endl;
     Utils::print_res_vec("Lower res", fpgas.lower_res);
+    std::cout << std::endl;
+    Utils::print_res_vec("Upper res", fpgas.upper_res);
     std::cout << std::endl << std::endl;
   }
 
@@ -189,23 +194,31 @@ private:
       Node node;
       node.resources.resize(8);
       double max_ratio = 0;
+      double min_ratio = std::numeric_limits<double>::max();
       for (int i = 0; i < 8; i++) {
         ss >> node.resources[i]; // 8种资源
         // old: 点权定义为所有资源的代数和
         // node.weight += node.resources[i];
         // new: 点权定义为占用比例最大的资源的比例乘以总资源
+        // 因此相比直接使用资源代数和 权值偏大
         if (fpga_total_res[i] != 0) {
           max_ratio = std::max(
               max_ratio, (double)node.resources[i] / fpga_total_res[i]);
+          // lower_weight 仅用于计算eps
+          min_ratio = std::min(
+              min_ratio, (double)node.resources[i] / fpga_total_res[i]);
         }
       }
       node.weight = max_ratio * total_res;
+      node.lower_weight = min_ratio * total_res;
+      finest.node_weight_sum += node.weight;
       finest.required_res += node.resources;
 
       finest.nodes.push_back(node); // add to finest
     }
     std::cout << "Finish reading file " << file_path << ", "
               << finest.nodes.size() << " nodes." << std::endl;
+    std::cout << "Node weight sum: " << finest.node_weight_sum << std::endl;
     Utils::print_res_vec("Required res", finest.required_res);
     std::cout << std::endl;
     Utils::print_ratio_vec("Ratio", finest.required_res, fpga_total_res);
