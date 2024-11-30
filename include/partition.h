@@ -31,6 +31,7 @@ private:
   mt_kahypar_preset_type_t mt_preset = DETERMINISTIC; // preset type
   double mt_eps = 0; // imbalance // will be assigned
   bool mt_use_max_eps = false; // use max eps
+  bool mt_zoom_eps = true; // zoom eps
   int mt_seed = 0; // seed
   bool mt_log = false; // log
   std::string mt_bin_path = "../../bin/MtKaHyPar"; // mt可执行文件路径
@@ -41,7 +42,7 @@ private:
   void init(const Graph &finest, const FPGA &fpgas) {
     // 实际上这样取eps也并没什么用 但至少是动态变化的了
     if (!this->mt_use_max_eps) {
-    this->mt_eps = std::numeric_limits<double>::max();
+      this->mt_eps = std::numeric_limits<double>::max();
     } else {
       this->mt_eps = 0;
     }
@@ -53,18 +54,20 @@ private:
         std::cout << "Warning: res " << i << " is tight." << std::endl;
       }
       if (!this->mt_use_max_eps) {
-      this->mt_eps = std::min(
-          this->mt_eps, std::max(res_eps[i], 0.0)); // eps设置为最紧张的资源
+        this->mt_eps = std::min(
+            this->mt_eps, std::max(res_eps[i], 0.0)); // eps设置为最紧张的资源
       } else {
         // 直接设置为最大eps的策略
         this->mt_eps = std::max(
             this->mt_eps, std::max(res_eps[i], 0.0)); // eps设置为最宽松的资源
       }
     }
-    if (!this->mt_use_max_eps) {
-    this->mt_eps /= 8; // 减小eps值 直观上和资源种类数相关
-    } else {
-      this->mt_eps *= 8; // 增大eps值 直观上和资源种类数相关
+    if (this->mt_zoom_eps) {
+      if (!this->mt_use_max_eps) {
+        this->mt_eps /= 8; // 减小eps值 直观上和资源种类数相关
+      } else {
+        this->mt_eps *= 8; // 增大eps值 直观上和资源种类数相关
+      }
     }
     std::cout << "Res eps: ";
     for (int i = 0; i < 8; i++) {
