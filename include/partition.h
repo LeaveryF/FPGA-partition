@@ -1,8 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
+#include <tuple>
 #include <vector>
 
 #include "libmtkahypar.h"
@@ -212,13 +214,164 @@ private:
 };
 
 class Trimmer {
+private:
+  bool trim_res_to_all_fpgas = true; // 微调时考虑所有fpga/仅考虑相邻fpga
+  bool trim_res_of_all_fpgas = false; // 是否对所有fpga上的所有点微调
+  bool trim_res_by_fpgas_asc = false; // 对fpga升序
+  bool trim_res_by_nodes_asc = false; // 对节点升序
+  bool trim_res_by_gains_asc = false; // 对增益升序
+
 public:
   void trim_res(
       const Graph &finest, const FPGA &fpgas, std::vector<int> &parts,
-      std::vector<std::unordered_set<int>> &assignments) {
+      std::vector<std::unordered_set<int>> &assignments,
+      std::vector<Eigen::VectorXi> &required_res) {
     std::cout << "Trimming res..." << std::endl << std::endl;
 
-    // 微调
+    // 微调资源
+    std::vector<int> violation_fpgas;
+    std::vector<std::vector<int>> violation_fpgas_res;
+    Utils::get_all_fpgas_res_violations(
+        fpgas.resources, required_res, violation_fpgas, violation_fpgas_res);
+
+    // 获取rank 暂按照最大资源利用率排序
+    std::vector<std::pair<double, int>> fpgas_rank; // <max_ratio, fpga_num>
+    for (int i = 0; i < fpgas.size; i++) {
+      double max_ratio = 0;
+      for (int j = 0; j < 8; j++) {
+        max_ratio = std::max(
+            max_ratio, (double)required_res[i][j] / fpgas.resources[i][j]);
+      }
+      fpgas_rank.push_back({max_ratio, i});
+    }
+    // 按照最大资源利用率排序
+    if (this->trim_res_by_fpgas_asc) {
+      std::sort(
+          fpgas_rank.begin(), fpgas_rank.end(),
+          [](const auto &a, const auto &b) { return a.first < b.first; });
+    } else {
+      std::sort(
+          fpgas_rank.begin(), fpgas_rank.end(),
+          [](const auto &a, const auto &b) { return a.first > b.first; });
+    }
+    std::cout << "FPGA res rank: ";
+    for (const auto &[_, i] : fpgas_rank) {
+      std::cout << i << ' ';
+    }
+    std::cout << std::endl << std::endl;
+
+    // 对于所有fpga
+    for (const auto &[_, i] : fpgas_rank) {
+      bool is_violation =
+          std::find(violation_fpgas.begin(), violation_fpgas.end(), i) !=
+          violation_fpgas.end();
+      // 仅微调有冲突的fpga
+      if (!is_violation && !this->trim_res_of_all_fpgas) {
+        continue;
+      }
+      if (is_violation) {
+        std::cout << "Trimming res of the violation FPGA " << i << "..."
+                  << std::endl;
+      } else {
+        std::cout << "Trimming res of FPGA " << i << "..." << std::endl;
+      }
+      // 按节点权值排序
+      std::vector<int> node_rank(assignments[i].begin(), assignments[i].end());
+      if (this->trim_res_by_nodes_asc) {
+        std::sort(
+            node_rank.begin(), node_rank.end(),
+            [&](const int &a, const int &b) {
+              return finest.nodes[a].weight < finest.nodes[b].weight;
+            });
+      } else {
+        std::sort(
+            node_rank.begin(), node_rank.end(),
+            [&](const int &a, const int &b) {
+              return finest.nodes[a].weight > finest.nodes[b].weight;
+            });
+      }
+      std::vector<std::tuple<int, int, int>>
+          gains_rank; // <node_num, to_fpga, gain>
+      // 对于这个fpga上的所有点
+      for (const auto &node : node_rank) {
+        // 考虑移到所有fpga上
+        for (int j = 0; j < fpgas.size; j++) {
+          auto gain_tuple = std::make_tuple(node, j, 0);
+          // 对于这个点关联的所有超边 减去增加的gain
+          int tmp = parts[node];
+          parts[node] = j;
+          for (const auto &net : finest.incident_edges[node]) {
+            std::get<2>(gain_tuple) -= Utils::get_single_hop_length(
+                finest.nets[net], parts, fpgas.dist);
+          }
+          // 加上之前的gain
+          parts[node] = tmp;
+          for (const auto &net : finest.incident_edges[node]) {
+            std::get<2>(gain_tuple) += Utils::get_single_hop_length(
+                finest.nets[net], parts, fpgas.dist);
+          }
+          gains_rank.push_back(gain_tuple);
+        }
+      }
+      // 按照gain排序 gain本身越大收益越大
+      if (this->trim_res_by_gains_asc) {
+        std::sort(
+            gains_rank.begin(), gains_rank.end(),
+            [](const auto &t1, const auto &t2) {
+              return std::get<2>(t1) < std::get<2>(t2);
+            });
+      } else {
+        std::sort(
+            gains_rank.begin(), gains_rank.end(),
+            [](const auto &t1, const auto &t2) {
+              return std::get<2>(t1) > std::get<2>(t2);
+            });
+      }
+
+      int pre_total_nodes = assignments[i].size();
+      std::unordered_set<int> visited_nodes;
+      for (const auto &[node, j, gain] : gains_rank) {
+        // 已访问过的节点
+        if (visited_nodes.find(node) != visited_nodes.end()) {
+          continue;
+        }
+        // 不能分配到资源已满的fpga上
+        if (!Utils::check_single_fpga_resource(
+                fpgas.resources[j],
+                required_res[j] + finest.nodes[node].resources)) {
+          continue;
+        }
+        visited_nodes.insert(node);
+        required_res[i] -= finest.nodes[node].resources;
+        required_res[j] += finest.nodes[node].resources;
+        assignments[i].erase(node);
+        assignments[j].insert(node);
+        parts[node] = j;
+        // 提前退出
+        if (visited_nodes.size() == pre_total_nodes) {
+          break;
+        }
+        // 检查资源
+        if (!this->trim_res_of_all_fpgas &&
+            Utils::check_single_fpga_resource(
+                fpgas.resources[i], required_res[i])) {
+          break;
+        }
+      }
+      // 检查资源
+      if (!Utils::check_single_fpga_resource(
+              fpgas.resources[i], required_res[i])) {
+        std::cerr << "Trim res failed, res can't satisfied." << std::endl;
+        exit(1);
+      }
+      // 一定每个结点都会被访问到
+      if (this->trim_res_of_all_fpgas &&
+          visited_nodes.size() != pre_total_nodes) {
+        std::cerr << "Trim res failed, missing nodes." << std::endl;
+        exit(1);
+      }
+    }
+    std::cout << std::endl;
   }
 
   void
@@ -257,12 +410,13 @@ public:
     // trim res
     Trimmer trimmer;
     if (!res_satisfied) {
-      trimmer.trim_res(finest, fpgas, parts, assignments);
-      res_satisfied = check_res(finest, fpgas, required_res, false);
-    }
-    if (!res_satisfied) {
-      std::cerr << "Trim res failed." << std::endl;
-      exit(1);
+      trimmer.trim_res(finest, fpgas, parts, assignments, required_res);
+      res_satisfied = check_res(finest, fpgas, required_res, true);
+      hop_satisfied = check_hop(finest, fpgas, parts, false);
+      if (!res_satisfied) {
+        std::cerr << "Trim res failed." << std::endl;
+        exit(1);
+      }
     }
 
     // trim hop
@@ -291,20 +445,20 @@ public:
 private:
   static bool check_res(
       const Graph &finest, const FPGA &fpgas,
-      const std::vector<Eigen::VectorXi> &required_res,
-      bool print_flag) { // 检查资源
+      const std::vector<Eigen::VectorXi> &required_res, bool print_flag) {
+    // 检查资源
     if (print_flag) {
-      // Utils::print_res_mat("FPGA res", "FPGA", fpgas.resources);
-      // Utils::print_res_vec("Total", fpgas.total_res);
-      // std::cout << std::endl;
+      Utils::print_res_mat("FPGA res", "FPGA", fpgas.resources);
+      Utils::print_res_vec("Total", fpgas.total_res);
+      std::cout << std::endl;
 
-      // Utils::print_res_mat("Required res", "Block", required_res);
-      // Utils::print_res_vec("Total", finest.required_res);
-      // std::cout << std::endl;
+      Utils::print_res_mat("Required res", "Block", required_res);
+      Utils::print_res_vec("Total", finest.required_res);
+      std::cout << std::endl;
 
-      // Utils::print_ratio_mat("Ratio", "Block", required_res,
-      // fpgas.resources); Utils::print_ratio_vec("Total", finest.required_res,
-      // fpgas.total_res); std::cout << std::endl;
+      Utils::print_ratio_mat("Ratio", "Block", required_res, fpgas.resources);
+      Utils::print_ratio_vec("Total", finest.required_res, fpgas.total_res);
+      std::cout << std::endl;
     }
 
     std::vector<int> violation_fpgas;
@@ -333,7 +487,8 @@ private:
 
   static bool check_hop(
       const Graph &finest, const FPGA &fpgas, std::vector<int> &parts,
-      bool print_flag) { // 检查hop
+      bool print_flag) {
+    // 检查hop
     std::vector<int> violation_nets;
     int total_hop_length = Utils::get_total_hop_length(
         finest.nets, parts, fpgas.dist, fpgas.max_hops, violation_nets);
