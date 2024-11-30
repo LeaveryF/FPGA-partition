@@ -220,7 +220,7 @@ private:
   bool trim_res_by_fpgas_asc = false; // 对fpga升序
   bool trim_res_by_nodes_asc = false; // 对节点升序
   bool trim_res_by_gains_asc = false; // 对增益升序
-  bool trim_res_one_by_one = true; // 逐个微调 效果更好 速度更慢
+  bool trim_res_one_by_one = false; // 逐个微调 效果更好 速度更慢
 
 public:
   void trim_res(
@@ -276,6 +276,8 @@ public:
       } else {
         std::cout << "Trimming res of FPGA " << i << "..." << std::endl;
       }
+
+      // for one by one 次数不会超过assignments[i].size()
       int trim_cnt = 0;
       while (true) {
         // 按节点权值排序
@@ -334,37 +336,50 @@ public:
         }
 
         // one by one
-        if (this->trim_res_one_by_one) {
-          bool issame = false;
-          for (const auto &[node, j, gain] : gains_rank) {
-            // 如果是自己 gain必是0 可以提前退出
-            if (i == j) {
-              // 如果资源已经足够
-              if (Utils::check_single_fpga_resource(
-                      fpgas.resources[i], required_res[i])) {
-                issame = true;
-                break;
-              }
-              // 否则 因为不能分配到资源已满的fpga上
-              else {
-                continue;
-              }
-            }
-            // 不能分配到资源已满的fpga上
-            if (!Utils::check_single_fpga_resource(
-                    fpgas.resources[j],
-                    required_res[j] + finest.nodes[node].resources)) {
-              continue;
-            }
-            required_res[i] -= finest.nodes[node].resources;
-            required_res[j] += finest.nodes[node].resources;
-            assignments[i].erase(node);
-            assignments[j].insert(node);
-            parts[node] = j;
-            trim_cnt++;
+        std::unordered_set<int> visited_nodes; // for ! one by one
+        bool issame = false;
+        for (const auto &[node, j, gain] : gains_rank) {
+          // 已访问过的节点 for ! one by one
+          if (visited_nodes.find(node) != visited_nodes.end()) {
+            continue;
+          }
+          // 如果是自己 gain必是0 如果资源已经足够 可以提前退出
+          // 否则 因为不能分配到资源已满的fpga上 continue
+          if (i == j && Utils::check_single_fpga_resource(
+                            fpgas.resources[i], required_res[i])) {
+            issame = true;
+            break;
+          }
+          // 不能分配到资源已满的fpga上
+          if (!Utils::check_single_fpga_resource(
+                  fpgas.resources[j],
+                  required_res[j] + finest.nodes[node].resources)) {
+            continue;
+          }
+          visited_nodes.insert(node);
+          required_res[i] -= finest.nodes[node].resources;
+          required_res[j] += finest.nodes[node].resources;
+          assignments[i].erase(node);
+          assignments[j].insert(node);
+          parts[node] = j;
+          trim_cnt++;
+          // one by one
+          if (this->trim_res_one_by_one) {
             // 每次只分配一个节点
             break;
           }
+          // all at once
+          else {
+            // 检查资源
+            if (!this->trim_res_of_all_fpgas &&
+                Utils::check_single_fpga_resource(
+                    fpgas.resources[i], required_res[i])) {
+              break;
+            }
+          }
+        }
+        // one by one
+        if (this->trim_res_one_by_one) {
           // 已经无增益
           if (issame) {
             break;
@@ -378,49 +393,6 @@ public:
         }
         // all at once
         else {
-          int pre_total_nodes = assignments[i].size();
-          std::unordered_set<int> visited_nodes;
-          for (const auto &[node, j, gain] : gains_rank) {
-            // 已访问过的节点
-            if (visited_nodes.find(node) != visited_nodes.end()) {
-              continue;
-            }
-            // 如果是自己 gain必是0 可以提前退出
-            if (i == j) {
-              // 如果资源已经足够
-              if (Utils::check_single_fpga_resource(
-                      fpgas.resources[i], required_res[i])) {
-                break;
-              }
-              // 否则 因为不能分配到资源已满的fpga上
-              else {
-                continue;
-              }
-            }
-            // 不能分配到资源已满的fpga上
-            if (!Utils::check_single_fpga_resource(
-                    fpgas.resources[j],
-                    required_res[j] + finest.nodes[node].resources)) {
-              continue;
-            }
-            visited_nodes.insert(node);
-            required_res[i] -= finest.nodes[node].resources;
-            required_res[j] += finest.nodes[node].resources;
-            assignments[i].erase(node);
-            assignments[j].insert(node);
-            parts[node] = j;
-            trim_cnt++;
-            // 提前退出
-            if (visited_nodes.size() == pre_total_nodes) {
-              break;
-            }
-            // 检查资源
-            if (!this->trim_res_of_all_fpgas &&
-                Utils::check_single_fpga_resource(
-                    fpgas.resources[i], required_res[i])) {
-              break;
-            }
-          }
           break;
         }
       }
@@ -475,29 +447,40 @@ public:
     if (!res_satisfied) {
       trimmer.trim_res(finest, fpgas, parts, assignments, required_res);
       res_satisfied = check_res(finest, fpgas, required_res, assignments, true);
-      hop_satisfied = check_hop(finest, fpgas, parts, false);
       if (!res_satisfied) {
         std::cerr << "Trim res failed." << std::endl;
         exit(1);
       }
+      hop_satisfied = check_hop(finest, fpgas, parts, false);
     }
 
     // trim hop
     // if (!hop_satisfied) {
     //   trimmer.trim_hop(finest, fpgas, parts);
+    //   res_satisfied = check_res(finest, fpgas, required_res, assignments,
+    //   true); if (!res_satisfied) {
+    //     std::cerr << "Trim hop failed, res isn't satisfied." << std::endl;
+    //     exit(1);
+    //   }
     //   hop_satisfied = check_hop(finest, fpgas, parts, false);
-    // }
-    // if (!hop_satisfied) {
-    //   std::cerr << "Trim hop failed." << std::endl;
+    //   if (!hop_satisfied) {
+    //     std::cerr << "Trim hop failed." << std::endl;
+    //     exit(1);
+    //   }
     // }
 
     // logical replicate
     // LogicalReplicator logical_replicator;
     // logical_replicator.replicate(finest, fpgas, parts);
-    // satisfied = check(finest, fpgas, parts);
-    // if (!satisfied) {
-    //   std::cerr << "Logical replicator gave the wrong answer, Partition
-    //   failed."
+    // res_satisfied = check_res(finest, fpgas, required_res, assignments,
+    // true); if (!res_satisfied) {
+    //   std::cerr << "Logical replicator failed, res isn't satisfied."
+    //             << std::endl;
+    //   exit(1);
+    // }
+    // hop_satisfied = check_hop(finest, fpgas, parts, false);
+    // if (!hop_satisfied) {
+    //   std::cerr << "Logical replicator failed, hop isn't satisfied."
     //             << std::endl;
     //   exit(1);
     // }
