@@ -159,11 +159,9 @@ private:
               << " fpgas." << std::endl;
     // Utils::print_res_mat("FPGA res", "FPGA", fpgas.resources);
     Utils::print_res_vec("Total res", fpgas.total_res);
-    std::cout << std::endl;
     Utils::print_res_vec("Lower res", fpgas.lower_res);
-    std::cout << std::endl;
     Utils::print_res_vec("Upper res", fpgas.upper_res);
-    std::cout << std::endl << std::endl;
+    std::cout << std::endl;
   }
 
   static void read_design_are(
@@ -220,7 +218,6 @@ private:
               << finest.nodes.size() << " nodes." << std::endl;
     std::cout << "Node weight sum: " << finest.node_weight_sum << std::endl;
     Utils::print_res_vec("Required res", finest.required_res);
-    std::cout << std::endl;
     Utils::print_ratio_vec("Ratio", finest.required_res, fpga_total_res);
     std::cout << std::endl;
   }
@@ -276,8 +273,8 @@ private:
               << std::endl;
     std::cout << "Max pins: " << max_pins << "(" << max_node_name << "), "
               << "Ave pins: " << (double)finest.pin_size / finest.nets.size()
-              << std::endl
-              << "Max used: " << max_used << "(" << max_used_name << "), "
+              << std::endl;
+    std::cout << "Max used: " << max_used << "(" << max_used_name << "), "
               << "Ave used: " << (double)finest.pin_size / finest.nodes.size()
               << std::endl
               << std::endl;

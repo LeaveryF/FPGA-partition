@@ -289,6 +289,7 @@ public:
     for (int i = 0; i < 8; i++) {
       std::cout << (double)used[i] * 100 / total[i] << "%\t";
     }
+    std::cout << std::endl;
   }
 
   // 资源相关
