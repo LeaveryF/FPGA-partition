@@ -215,12 +215,13 @@ private:
 
 class Trimmer {
 private:
-  bool trim_res_to_all_fpgas = true; // 微调时考虑所有fpga/仅考虑相邻fpga
-  bool trim_res_of_all_fpgas = false; // 是否对所有fpga上的所有点微调
-  bool trim_res_by_fpgas_asc = false; // 对fpga升序
-  bool trim_res_by_nodes_asc = false; // 对节点升序
-  bool trim_res_by_gains_asc = false; // 对增益升序
-  bool trim_res_one_by_one = false; // 逐个微调 效果更好 速度更慢
+  bool trim_res_to_all_fpgas = true; // 考虑所有fpga/仅考虑相邻 // useless
+  bool trim_res_of_all_fpgas = false; // 微调所有点/仅资源超限 // !
+  bool trim_res_by_fpgas_asc = false; // 对fpga升序 // 降序效果更好
+  bool trim_res_by_nodes_weight = false; // 以节点权值为主要关键字 // 差不多
+  bool trim_res_by_nodes_asc = false; // 对节点升序 // 差不多
+  bool trim_res_by_gains_asc = false; // 对增益升序 // 应该不用调
+  bool trim_res_one_by_one = false; // 逐个微调 理论上效果更好 速度更慢 // !
 
 public:
   bool get_trim_res_of_all_fpgas() {
@@ -284,21 +285,55 @@ public:
       // for one by one 次数不会超过assignments[i].size()
       int trim_cnt = 0;
       while (true) {
-        // 按节点权值排序
+        // 排序节点
         std::vector<int> node_rank(
             assignments[i].begin(), assignments[i].end());
-        if (this->trim_res_by_nodes_asc) {
-          std::sort(
-              node_rank.begin(), node_rank.end(),
-              [&](const int &a, const int &b) {
-                return finest.nodes[a].weight < finest.nodes[b].weight;
-              });
+        if (this->trim_res_by_nodes_weight) {
+          if (this->trim_res_by_nodes_asc) {
+            std::sort(
+                node_rank.begin(), node_rank.end(),
+                [&](const int &a, const int &b) {
+                  if (finest.nodes[a].weight == finest.nodes[b].weight) {
+                    return finest.incident_edges[a].size() <
+                           finest.incident_edges[b].size();
+                  }
+                  return finest.nodes[a].weight < finest.nodes[b].weight;
+                });
+          } else {
+            std::sort(
+                node_rank.begin(), node_rank.end(),
+                [&](const int &a, const int &b) {
+                  if (finest.nodes[a].weight == finest.nodes[b].weight) {
+                    return finest.incident_edges[a].size() >
+                           finest.incident_edges[b].size();
+                  }
+                  return finest.nodes[a].weight > finest.nodes[b].weight;
+                });
+          }
         } else {
-          std::sort(
-              node_rank.begin(), node_rank.end(),
-              [&](const int &a, const int &b) {
-                return finest.nodes[a].weight > finest.nodes[b].weight;
-              });
+          if (this->trim_res_by_nodes_asc) {
+            std::sort(
+                node_rank.begin(), node_rank.end(),
+                [&](const int &a, const int &b) {
+                  if (finest.incident_edges[a].size() ==
+                      finest.incident_edges[a].size()) {
+                    return finest.nodes[a].weight < finest.nodes[b].weight;
+                  }
+                  return finest.incident_edges[a].size() <
+                         finest.incident_edges[a].size();
+                });
+          } else {
+            std::sort(
+                node_rank.begin(), node_rank.end(),
+                [&](const int &a, const int &b) {
+                  if (finest.incident_edges[a].size() ==
+                      finest.incident_edges[a].size()) {
+                    return finest.nodes[a].weight > finest.nodes[b].weight;
+                  }
+                  return finest.incident_edges[a].size() >
+                         finest.incident_edges[a].size();
+                });
+          }
         }
 
         std::vector<std::tuple<int, int, int>>
