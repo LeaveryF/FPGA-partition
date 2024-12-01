@@ -223,6 +223,10 @@ private:
   bool trim_res_one_by_one = false; // 逐个微调 效果更好 速度更慢
 
 public:
+  bool get_trim_res_of_all_fpgas() {
+    return this->trim_res_of_all_fpgas;
+  }
+
   void trim_res(
       const Graph &finest, const FPGA &fpgas, std::vector<int> &parts,
       std::vector<std::unordered_set<int>> &assignments,
@@ -444,7 +448,7 @@ public:
 
     // trim res
     Trimmer trimmer;
-    if (!res_satisfied) {
+    if (!res_satisfied || trimmer.get_trim_res_of_all_fpgas()) {
       trimmer.trim_res(finest, fpgas, parts, assignments, required_res);
       res_satisfied = check_res(finest, fpgas, required_res, assignments, true);
       if (!res_satisfied) {
