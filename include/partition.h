@@ -215,17 +215,17 @@ private:
 
 class ResourceTrimmer {
 private:
-  bool trim_res_to_all_fpgas = true; // 考虑所有fpga/仅考虑相邻 // useless
-  bool trim_res_of_all_fpgas = false; // 微调所有点/仅资源超限 // !
-  bool trim_res_by_fpgas_asc = false; // 对fpga升序 // 降序效果更好
-  bool trim_res_by_nodes_weight = false; // 以节点权值为主要关键字 // 差不多
-  bool trim_res_by_nodes_asc = false; // 对节点升序 // 差不多
-  bool trim_res_by_gains_asc = false; // 对增益升序 // 应该不用调
-  bool trim_res_one_by_one = false; // 逐个微调 理论上效果更好 速度更慢 // !
+  bool trim_to_all_fpgas = true; // 考虑所有fpga/仅考虑相邻 // useless
+  bool trim_of_all_fpgas = false; // 微调所有点/仅资源超限 // !
+  bool trim_by_fpgas_asc = false; // 对fpga升序 // 降序效果更好
+  bool trim_by_nodes_weight = false; // 以节点权值为主要关键字 // 差不多
+  bool trim_by_nodes_asc = false; // 对节点升序 // 差不多
+  bool trim_by_gains_asc = false; // 对增益升序 // 应该不用调
+  bool trim_one_by_one = false; // 逐个微调 理论上效果更好 速度更慢 // !
 
 public:
-  bool get_trim_res_of_all_fpgas() {
-    return this->trim_res_of_all_fpgas;
+  bool get_trim_of_all_fpgas() {
+    return this->trim_of_all_fpgas;
   }
 
   void trim_res(
@@ -251,7 +251,7 @@ public:
       fpgas_rank.push_back({max_ratio, i});
     }
     // 按照最大资源利用率排序
-    if (this->trim_res_by_fpgas_asc) {
+    if (this->trim_by_fpgas_asc) {
       std::sort(
           fpgas_rank.begin(), fpgas_rank.end(),
           [](const auto &a, const auto &b) { return a.first < b.first; });
@@ -272,7 +272,7 @@ public:
           std::find(violation_fpgas.begin(), violation_fpgas.end(), i) !=
           violation_fpgas.end();
       // 仅微调有冲突的fpga
-      if (!is_violation && !this->trim_res_of_all_fpgas) {
+      if (!is_violation && !this->trim_of_all_fpgas) {
         continue;
       }
       if (is_violation) {
@@ -288,8 +288,8 @@ public:
         // 排序节点
         std::vector<int> node_rank(
             assignments[i].begin(), assignments[i].end());
-        if (this->trim_res_by_nodes_weight) {
-          if (this->trim_res_by_nodes_asc) {
+        if (this->trim_by_nodes_weight) {
+          if (this->trim_by_nodes_asc) {
             std::sort(
                 node_rank.begin(), node_rank.end(),
                 [&](const int &a, const int &b) {
@@ -311,7 +311,7 @@ public:
                 });
           }
         } else {
-          if (this->trim_res_by_nodes_asc) {
+          if (this->trim_by_nodes_asc) {
             std::sort(
                 node_rank.begin(), node_rank.end(),
                 [&](const int &a, const int &b) {
@@ -360,7 +360,7 @@ public:
           }
         }
         // 按照gain排序 gain本身越大收益越大
-        if (this->trim_res_by_gains_asc) {
+        if (this->trim_by_gains_asc) {
           std::sort(
               gains_rank.begin(), gains_rank.end(),
               [](const auto &t1, const auto &t2) {
@@ -403,14 +403,14 @@ public:
           parts[node] = j;
           trim_cnt++;
           // one by one
-          if (this->trim_res_one_by_one) {
+          if (this->trim_one_by_one) {
             // 每次只分配一个节点
             break;
           }
           // all at once
           else {
             // 检查资源
-            if (!this->trim_res_of_all_fpgas &&
+            if (!this->trim_of_all_fpgas &&
                 Utils::check_single_fpga_resource(
                     fpgas.resources[i], required_res[i])) {
               break;
@@ -418,13 +418,13 @@ public:
           }
         }
         // one by one
-        if (this->trim_res_one_by_one) {
+        if (this->trim_one_by_one) {
           // 已经无增益
           if (issame) {
             break;
           }
           // 检查资源
-          if (!this->trim_res_of_all_fpgas &&
+          if (!this->trim_of_all_fpgas &&
               Utils::check_single_fpga_resource(
                   fpgas.resources[i], required_res[i])) {
             break;
@@ -491,7 +491,7 @@ public:
 
     // trim res
     ResourceTrimmer res_trimmer;
-    if (!res_satisfied || res_trimmer.get_trim_res_of_all_fpgas()) {
+    if (!res_satisfied || res_trimmer.get_trim_of_all_fpgas()) {
       res_trimmer.trim_res(finest, fpgas, parts, assignments, required_res);
       res_satisfied = check_res(finest, fpgas, required_res, assignments, true);
       if (!res_satisfied) {
