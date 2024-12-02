@@ -213,7 +213,7 @@ private:
   }
 };
 
-class Trimmer {
+class ResourceTrimmer {
 private:
   bool trim_res_to_all_fpgas = true; // 考虑所有fpga/仅考虑相邻 // useless
   bool trim_res_of_all_fpgas = false; // 微调所有点/仅资源超限 // !
@@ -446,13 +446,21 @@ public:
     }
     std::cout << std::endl;
   }
+};
+
+class HopTrimmer {
+private:
+  bool trim_all_nodes = false; // 微调所有点/仅违例 // !
+
+public:
+  bool get_trim_all_nodes() {
+    return this->trim_all_nodes;
+  }
 
   void
   trim_hop(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
     std::cout << "Trimming hop..." << std::endl << std::endl;
   }
-
-private:
 };
 
 class LogicalReplicator {
@@ -482,9 +490,9 @@ public:
     bool hop_satisfied = check_hop(finest, fpgas, parts, true);
 
     // trim res
-    Trimmer trimmer;
-    if (!res_satisfied || trimmer.get_trim_res_of_all_fpgas()) {
-      trimmer.trim_res(finest, fpgas, parts, assignments, required_res);
+    ResourceTrimmer res_trimmer;
+    if (!res_satisfied || res_trimmer.get_trim_res_of_all_fpgas()) {
+      res_trimmer.trim_res(finest, fpgas, parts, assignments, required_res);
       res_satisfied = check_res(finest, fpgas, required_res, assignments, true);
       if (!res_satisfied) {
         std::cerr << "Trim res failed." << std::endl;
@@ -494,19 +502,20 @@ public:
     }
 
     // trim hop
-    // if (!hop_satisfied) {
-    //   trimmer.trim_hop(finest, fpgas, parts);
-    //   res_satisfied = check_res(finest, fpgas, required_res, assignments,
-    //   true); if (!res_satisfied) {
-    //     std::cerr << "Trim hop failed, res isn't satisfied." << std::endl;
-    //     exit(1);
-    //   }
-    //   hop_satisfied = check_hop(finest, fpgas, parts, false);
-    //   if (!hop_satisfied) {
-    //     std::cerr << "Trim hop failed." << std::endl;
-    //     exit(1);
-    //   }
-    // }
+    HopTrimmer hop_trimmer;
+    if (!hop_satisfied || hop_trimmer.get_trim_all_nodes()) {
+      hop_trimmer.trim_hop(finest, fpgas, parts);
+      res_satisfied = check_res(finest, fpgas, required_res, assignments, true);
+      if (!res_satisfied) {
+        std::cerr << "Trim hop failed, res isn't satisfied." << std::endl;
+        exit(1);
+      }
+      hop_satisfied = check_hop(finest, fpgas, parts, false);
+      if (!hop_satisfied) {
+        std::cerr << "Trim hop failed." << std::endl;
+        exit(1);
+      }
+    }
 
     // logical replicate
     // LogicalReplicator logical_replicator;
