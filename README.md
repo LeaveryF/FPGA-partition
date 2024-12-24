@@ -1,5 +1,14 @@
 # BUPT_Part
 
+## 项目介绍
+
+第六届中国研究生创‘芯’大赛·EDA设计精英挑战赛  
+赛题三 考虑逻辑复制的超图分割算法设计  
+个人分支(完全未使用该分支) 基于mt-kahypar划分器(仅使用其划分结果)(放心公开)  
+参赛结果: 初赛-10/22提交9/11晋级 决赛-三等奖(和该分支完全无关)
+
+相关网址见该readme最后
+
 ## 项目构建
 
 加载CMakeList.txt 使用cmake构建  
@@ -335,3 +344,51 @@ eps是一个很关键的参数 调整它即在资源约束和hop数之间权衡 
   - eps = 4  
     - all at once 5923 342  ...
     - one by one 3356 69  ...
+
+## 相关网址
+
+```plaintext
+https://cpipc.acge.org.cn/ 中国研究生创新实践系列大赛
+https://cpipc.acge.org.cn/cw/hp/2c9080158ee9c272018f229208b610a6 EDA设计精英挑战赛
+https://eda.icisc.cn/ 中国研究生创‘芯’大赛·EDA设计精英挑战赛 第六届
+https://edaoss.icisc.cn/file/cacheFile/341059ff8d644eeda0cd9e10f4be298c.pdf 章程
+https://edaoss.icisc.cn/file/cacheFile/2024/8/1/3c195cf624de44819600d52631169662.pdf
+https://mp.weixin.qq.com/s/4wsms2II_oK80jbEkcesXA
+通知 7.31
+https://edaoss.icisc.cn/file/cacheFile/2024/8/7/745d61a664f54d4989de711dc04ff473.pdf
+https://mp.weixin.qq.com/s/SlQAo7omUtRKPPTWuDN_SQ
+赛题三 8.1
+https://eda.icisc.cn/video/toLearningResource
+https://mp.weixin.qq.com/s/ezVFJly5VsG8cVAnFOLj-A
+https://eda.icisc.cn/download/toVideoDetail?id=19050c9e641c41e0a871d44bc9a4a09b
+赛题宣讲 8.27
+https://mp.weixin.qq.com/s/39GFSBMq7UWcLDm36k5dAg 报名指南 9.2
+https://meeting.tencent.com/cw/2yRWDxdNfd 答疑 10.23
+https://meeting.tencent.com/cw/NLBQyg6K36 答疑/提交说明 11.1
+https://meeting.tencent.com/cw/NAwevByK2e 答疑 11.6
+https://edaoss.icisc.cn/file/cacheFile/2024/11/12/c9d95274d07942ebaad5f5c4ca89b9a9.pdf
+https://mp.weixin.qq.com/s/2OYMIapFFDFTSpm2ODlBWw
+验收 11.10
+https://edaoss.icisc.cn/file/cacheFile/2024/11/27/e34477b9289442db85c01174ed570483.pdf
+https://mp.weixin.qq.com/s/26r78kK8qbwl94VAAAYAfg
+晋级名单 11.26
+https://edaoss.icisc.cn/file/cacheFile/2024/12/3/0b2272be3ccf4f7bb2f26df1654f7369.pdf
+https://mp.weixin.qq.com/s/EN-2cAugRH6W8zySwtv7LQ
+决赛报道 11.27
+https://cpipc.acge.org.cn//cw/detail/2c9080158ee9c272018f229208b610a6/2c9080159353177f01936c1b701a1228
+https://mp.weixin.qq.com/s/7g0Z5UNRMol9pQyIPbGCxg
+决赛评审 11.27
+https://mp.weixin.qq.com/s/Rt9el9uO2e-SLvg2CDdeUg
+开幕 12.6
+https://m.alltuu.com/album/2176161006/
+图片直播
+https://edaoss.icisc.cn/file/cacheFile/2024/12/9/7f723c06ead54c01b32cd0700617a98a.pdf
+https://mp.weixin.qq.com/s/wUsnpof64iZvUnvfDSRUow
+获奖名单 12.8
+https://mp.weixin.qq.com/s/9fBOzPp_SfUwNd-rv8dVuA
+决赛总结 12.10
+https://mp.weixin.qq.com/s/uGvNjYLSrKrSOmIBWcuVRw
+交通补贴 12.11
+https://mp.weixin.qq.com/s/zF0rne-0chhECMnl72vt0w
+学院新闻 12.11
+```
