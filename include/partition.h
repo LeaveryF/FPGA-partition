@@ -32,8 +32,8 @@ private:
   bool mt_lib_output_files = true; // only when mt_lib_use_files is false
   mt_kahypar_preset_type_t mt_preset = DETERMINISTIC; // preset type
   double mt_eps = 0; // imbalance // will be assigned
-  bool mt_use_max_eps = false; // use max eps
-  bool mt_zoom_eps = true; // zoom eps
+  bool mt_use_max_eps = true; // use max eps
+  bool mt_zoom_eps = false; // zoom eps
   int mt_seed = 0; // seed
   bool mt_log = false; // log
   std::string mt_bin_path = "../../bin/MtKaHyPar"; // mt可执行文件路径
@@ -219,8 +219,10 @@ private:
   bool trim_of_all_fpgas = false; // 微调所有点/仅资源超限 // !
   bool trim_by_fpgas_asc = false; // 对fpga升序 // 降序效果更好
   bool trim_by_nodes_weight = false; // 以节点权值为主要关键字 // 差不多
-  bool trim_by_nodes_asc = false; // 对节点升序 // 差不多
+  bool trim_by_nodes_asc = true; // 对节点升序 // 差不多
   bool trim_by_gains_asc = false; // 对增益升序 // 应该不用调
+  bool trim_all_fpgas_at_once = false; // 一次微调所有点
+  bool trim_one_by_one_quick = false; // 逐个微调
   bool trim_one_by_one = false; // 逐个微调 理论上效果更好 速度更慢 // !
 
 public:
@@ -251,15 +253,12 @@ public:
       fpgas_rank.push_back({max_ratio, i});
     }
     // 按照最大资源利用率排序
-    if (this->trim_by_fpgas_asc) {
-      std::sort(
-          fpgas_rank.begin(), fpgas_rank.end(),
-          [](const auto &a, const auto &b) { return a.first < b.first; });
-    } else {
-      std::sort(
-          fpgas_rank.begin(), fpgas_rank.end(),
-          [](const auto &a, const auto &b) { return a.first > b.first; });
-    }
+    std::sort(
+        fpgas_rank.begin(), fpgas_rank.end(),
+        [&](const auto &a, const auto &b) {
+          return this->trim_by_fpgas_asc ? a.first < b.first
+                                         : a.first > b.first;
+        });
     std::cout << "FPGA res rank: ";
     for (const auto &[_, i] : fpgas_rank) {
       std::cout << i << ' ';
@@ -282,169 +281,184 @@ public:
         std::cout << "Trimming res of FPGA " << i << "..." << std::endl;
       }
 
-      // for one by one 次数不会超过assignments[i].size()
       int trim_cnt = 0;
-      while (true) {
+      // one by one 次数不会超过assignments[i].size()
+      if (this->trim_one_by_one) {
+        while (true) {
+          // 排序节点
+          std::vector<int> node_rank(
+              assignments[i].begin(), assignments[i].end());
+          std::sort(
+              node_rank.begin(), node_rank.end(),
+              [&](const int &a, const int &b) {
+                if (this->trim_by_nodes_weight) {
+                  if (finest.nodes[a].weight == finest.nodes[b].weight) {
+                    return this->trim_by_nodes_asc
+                               ? finest.incident_edges[a].size() <
+                                     finest.incident_edges[b].size()
+                               : finest.incident_edges[a].size() >
+                                     finest.incident_edges[b].size();
+                  }
+                  return this->trim_by_nodes_asc
+                             ? finest.nodes[a].weight < finest.nodes[b].weight
+                             : finest.nodes[a].weight > finest.nodes[b].weight;
+                } else {
+                  if (finest.incident_edges[a].size() ==
+                      finest.incident_edges[b].size()) {
+                    return this->trim_by_nodes_asc
+                               ? finest.nodes[a].weight < finest.nodes[b].weight
+                               : finest.nodes[a].weight >
+                                     finest.nodes[b].weight;
+                  }
+                  return this->trim_by_nodes_asc
+                             ? finest.incident_edges[a].size() <
+                                   finest.incident_edges[b].size()
+                             : finest.incident_edges[a].size() >
+                                   finest.incident_edges[b].size();
+                }
+              });
+          bool satisfied = false;
+          trim_cnt += trial(
+              finest, fpgas, parts, required_res, assignments, node_rank, 1,
+              satisfied);
+          if (satisfied) {
+            break;
+          }
+        }
+      }
+      // one by one quick
+      else if (this->trim_one_by_one_quick) {
+
+      }
+      // all at once
+      else {
         // 排序节点
         std::vector<int> node_rank(
             assignments[i].begin(), assignments[i].end());
-        if (this->trim_by_nodes_weight) {
-          if (this->trim_by_nodes_asc) {
-            std::sort(
-                node_rank.begin(), node_rank.end(),
-                [&](const int &a, const int &b) {
-                  if (finest.nodes[a].weight == finest.nodes[b].weight) {
-                    return finest.incident_edges[a].size() <
-                           finest.incident_edges[b].size();
-                  }
-                  return finest.nodes[a].weight < finest.nodes[b].weight;
-                });
-          } else {
-            std::sort(
-                node_rank.begin(), node_rank.end(),
-                [&](const int &a, const int &b) {
-                  if (finest.nodes[a].weight == finest.nodes[b].weight) {
-                    return finest.incident_edges[a].size() >
-                           finest.incident_edges[b].size();
-                  }
-                  return finest.nodes[a].weight > finest.nodes[b].weight;
-                });
-          }
-        } else {
-          if (this->trim_by_nodes_asc) {
-            std::sort(
-                node_rank.begin(), node_rank.end(),
-                [&](const int &a, const int &b) {
-                  if (finest.incident_edges[a].size() ==
-                      finest.incident_edges[a].size()) {
-                    return finest.nodes[a].weight < finest.nodes[b].weight;
-                  }
-                  return finest.incident_edges[a].size() <
-                         finest.incident_edges[a].size();
-                });
-          } else {
-            std::sort(
-                node_rank.begin(), node_rank.end(),
-                [&](const int &a, const int &b) {
-                  if (finest.incident_edges[a].size() ==
-                      finest.incident_edges[a].size()) {
-                    return finest.nodes[a].weight > finest.nodes[b].weight;
-                  }
-                  return finest.incident_edges[a].size() >
-                         finest.incident_edges[a].size();
-                });
-          }
-        }
-
-        std::vector<std::tuple<int, int, int>>
-            gains_rank; // <node_num, to_fpga, gain>
-        // 对于这个fpga上的所有点
-        for (const auto &node : node_rank) {
-          // 考虑移到所有fpga上
-          for (int j = 0; j < fpgas.size; j++) {
-            auto gain_tuple = std::make_tuple(node, j, 0);
-            // 对于这个点关联的所有超边 减去增加的gain
-            int tmp = parts[node];
-            parts[node] = j;
-            for (const auto &net : finest.incident_edges[node]) {
-              std::get<2>(gain_tuple) -= Utils::get_single_hop_length(
-                  finest.nets[net], parts, fpgas.dist);
-            }
-            // 加上之前的gain
-            parts[node] = tmp;
-            for (const auto &net : finest.incident_edges[node]) {
-              std::get<2>(gain_tuple) += Utils::get_single_hop_length(
-                  finest.nets[net], parts, fpgas.dist);
-            }
-            gains_rank.push_back(gain_tuple);
-          }
-        }
-        // 按照gain排序 gain本身越大收益越大
-        if (this->trim_by_gains_asc) {
-          std::sort(
-              gains_rank.begin(), gains_rank.end(),
-              [](const auto &t1, const auto &t2) {
-                return std::get<2>(t1) < std::get<2>(t2);
-              });
-        } else {
-          std::sort(
-              gains_rank.begin(), gains_rank.end(),
-              [](const auto &t1, const auto &t2) {
-                return std::get<2>(t1) > std::get<2>(t2);
-              });
-        }
-
-        // one by one
-        std::unordered_set<int> visited_nodes; // for ! one by one
-        bool issame = false;
-        for (const auto &[node, j, gain] : gains_rank) {
-          // 已访问过的节点 for ! one by one
-          if (visited_nodes.find(node) != visited_nodes.end()) {
-            continue;
-          }
-          // 如果是自己 gain必是0 如果资源已经足够 可以提前退出
-          // 否则 因为不能分配到资源已满的fpga上 continue
-          if (i == j && Utils::check_single_fpga_resource(
-                            fpgas.resources[i], required_res[i])) {
-            issame = true;
-            break;
-          }
-          // 不能分配到资源已满的fpga上
-          if (!Utils::check_single_fpga_resource(
-                  fpgas.resources[j],
-                  required_res[j] + finest.nodes[node].resources)) {
-            continue;
-          }
-          visited_nodes.insert(node);
-          required_res[i] -= finest.nodes[node].resources;
-          required_res[j] += finest.nodes[node].resources;
-          assignments[i].erase(node);
-          assignments[j].insert(node);
-          parts[node] = j;
-          trim_cnt++;
-          // one by one
-          if (this->trim_one_by_one) {
-            // 每次只分配一个节点
-            break;
-          }
-          // all at once
-          else {
-            // 检查资源
-            if (!this->trim_of_all_fpgas &&
-                Utils::check_single_fpga_resource(
-                    fpgas.resources[i], required_res[i])) {
-              break;
-            }
-          }
-        }
-        // one by one
-        if (this->trim_one_by_one) {
-          // 已经无增益
-          if (issame) {
-            break;
-          }
-          // 检查资源
-          if (!this->trim_of_all_fpgas &&
-              Utils::check_single_fpga_resource(
-                  fpgas.resources[i], required_res[i])) {
-            break;
-          }
-        }
-        // all at once
-        else {
-          break;
-        }
+        std::sort(
+            node_rank.begin(), node_rank.end(),
+            [&](const int &a, const int &b) {
+              if (this->trim_by_nodes_weight) {
+                if (finest.nodes[a].weight == finest.nodes[b].weight) {
+                  return this->trim_by_nodes_asc
+                             ? finest.incident_edges[a].size() <
+                                   finest.incident_edges[b].size()
+                             : finest.incident_edges[a].size() >
+                                   finest.incident_edges[b].size();
+                }
+                return this->trim_by_nodes_asc
+                           ? finest.nodes[a].weight < finest.nodes[b].weight
+                           : finest.nodes[a].weight > finest.nodes[b].weight;
+              } else {
+                if (finest.incident_edges[a].size() ==
+                    finest.incident_edges[b].size()) {
+                  return this->trim_by_nodes_asc
+                             ? finest.nodes[a].weight < finest.nodes[b].weight
+                             : finest.nodes[a].weight > finest.nodes[b].weight;
+                }
+                return this->trim_by_nodes_asc
+                           ? finest.incident_edges[a].size() <
+                                 finest.incident_edges[b].size()
+                           : finest.incident_edges[a].size() >
+                                 finest.incident_edges[b].size();
+              }
+            });
+        bool satisfied = false;
+        trim_cnt += trial(
+            finest, fpgas, parts, required_res, assignments, node_rank,
+            node_rank.size(), satisfied);
       }
       // 检查资源
       if (!Utils::check_single_fpga_resource(
               fpgas.resources[i], required_res[i])) {
-        std::cerr << "Trim res failed, res can't satisfied." << std::endl;
+        std::cerr << "Trim res failed, res on " << i
+                  << " can't satisfied after " << trim_cnt << " trims."
+                  << std::endl;
         exit(1);
       } else {
-        std::cout << "Sucessfully trim " << trim_cnt << " nodes." << std::endl;
+        std::cout << "Sucessfully trim " << trim_cnt << " nodes on " << i << "."
+                  << std::endl;
       }
     }
     std::cout << std::endl;
+  }
+
+  int trial(
+      const Graph &finest, const FPGA &fpgas, std::vector<int> &parts,
+      std::vector<Eigen::VectorXi> &required_res,
+      std::vector<std::unordered_set<int>> &assignments,
+      const std::vector<int> &nodes, const int &max_cnt, bool &satisfied) {
+    std::vector<std::tuple<int, int, int>>
+        gains_rank; // <node_num, to_fpga, gain>
+    // 对待处理的所有点
+    for (const auto &node : nodes) {
+      // 考虑移到所有fpga上
+      for (int j = 0; j < fpgas.size; j++) {
+        auto gain_tuple = std::make_tuple(node, j, 0);
+        // 对于这个点关联的所有超边 减去增加的gain
+        int tmp = parts[node];
+        parts[node] = j;
+        for (const auto &net : finest.incident_edges[node]) {
+          std::get<2>(gain_tuple) -=
+              Utils::get_single_hop_length(finest.nets[net], parts, fpgas.dist);
+        }
+        // 加上之前的gain
+        parts[node] = tmp;
+        for (const auto &net : finest.incident_edges[node]) {
+          std::get<2>(gain_tuple) +=
+              Utils::get_single_hop_length(finest.nets[net], parts, fpgas.dist);
+        }
+        gains_rank.push_back(gain_tuple);
+      }
+    }
+    // 按照gain排序 gain本身越大收益越大
+    std::sort(
+        gains_rank.begin(), gains_rank.end(),
+        [&](const auto &t1, const auto &t2) {
+          return this->trim_by_gains_asc ? std::get<2>(t1) < std::get<2>(t2)
+                                         : std::get<2>(t1) > std::get<2>(t2);
+        });
+
+    std::unordered_set<int> visited_nodes;
+    for (const auto &[node, j, gain] : gains_rank) {
+      // 已访问过的节点
+      if (visited_nodes.find(node) != visited_nodes.end()) {
+        continue;
+      }
+      // 如果是自己 gain必是0 如果资源已经足够 可以提前退出
+      // 否则 因为不能分配到资源已满的fpga上 continue
+      if (parts[node] == j &&
+          Utils::check_single_fpga_resource(
+              fpgas.resources[parts[node]], required_res[parts[node]])) {
+        satisfied = true;
+        break;
+      }
+      // 不能分配到资源已满的fpga上
+      if (!Utils::check_single_fpga_resource(
+              fpgas.resources[j],
+              required_res[j] + finest.nodes[node].resources)) {
+        continue;
+      }
+      visited_nodes.insert(node);
+      required_res[parts[node]] -= finest.nodes[node].resources;
+      required_res[j] += finest.nodes[node].resources;
+      assignments[parts[node]].erase(node);
+      assignments[j].insert(node);
+      int pre = parts[node];
+      parts[node] = j;
+      // 检查资源
+      if (!this->trim_of_all_fpgas &&
+          Utils::check_single_fpga_resource(
+              fpgas.resources[pre], required_res[pre])) {
+        satisfied = true;
+        break;
+      }
+      // 提前结束
+      if (visited_nodes.size() == max_cnt) {
+        break;
+      }
+    }
+    return visited_nodes.size();
   }
 };
 
@@ -502,20 +516,20 @@ public:
     }
 
     // trim hop
-    HopTrimmer hop_trimmer;
-    if (!hop_satisfied || hop_trimmer.get_trim_all_nodes()) {
-      hop_trimmer.trim_hop(finest, fpgas, parts);
-      res_satisfied = check_res(finest, fpgas, required_res, assignments, true);
-      if (!res_satisfied) {
-        std::cerr << "Trim hop failed, res isn't satisfied." << std::endl;
-        exit(1);
-      }
-      hop_satisfied = check_hop(finest, fpgas, parts, false);
-      if (!hop_satisfied) {
-        std::cerr << "Trim hop failed." << std::endl;
-        exit(1);
-      }
-    }
+    // HopTrimmer hop_trimmer;
+    // if (!hop_satisfied || hop_trimmer.get_trim_all_nodes()) {
+    //   hop_trimmer.trim_hop(finest, fpgas, parts);
+    //   res_satisfied = check_res(finest, fpgas, required_res, assignments,
+    //   true); if (!res_satisfied) {
+    //     std::cerr << "Trim hop failed, res isn't satisfied." << std::endl;
+    //     exit(1);
+    //   }
+    //   hop_satisfied = check_hop(finest, fpgas, parts, false);
+    //   if (!hop_satisfied) {
+    //     std::cerr << "Trim hop failed." << std::endl;
+    //     exit(1);
+    //   }
+    // }
 
     // logical replicate
     // LogicalReplicator logical_replicator;
