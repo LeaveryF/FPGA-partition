@@ -464,7 +464,12 @@ public:
 
 class HopTrimmer {
 private:
+  bool trim_to_all_fpgas = true; // 考虑所有fpga/仅考虑相邻 // useless
   bool trim_all_nodes = false; // 微调所有点/仅违例 // !
+  bool trim_by_nodes_weight = false; // 以节点权值为主要关键字 // 差不多
+  bool trim_by_nodes_asc = false; // 对节点升序 // 差不多
+  bool trim_by_gains_asc = false; // 对增益升序 // 应该不用调
+  bool trim_one_by_one = false; // 逐个微调 理论上效果更好 速度更慢 // !
 
 public:
   bool get_trim_all_nodes() {
@@ -474,6 +479,26 @@ public:
   void
   trim_hop(const Graph &finest, const FPGA &fpgas, std::vector<int> &parts) {
     std::cout << "Trimming hop..." << std::endl << std::endl;
+
+    int cycle = 0;
+    while (!Utils::check_all_hops(
+        finest.nets, parts, fpgas.dist, fpgas.max_hops)) {
+
+      // 微调hop
+      std::vector<int> vio_nets;
+      std::unordered_set<int> vio_nodes;
+      Utils::get_total_hop_length(
+          finest.nets, parts, fpgas.dist, fpgas.max_hops, vio_nets);
+      for (const auto &net : vio_nets) {
+        for (const auto &node : finest.nets[net].nodes) {
+          vio_nodes.insert(node);
+        }
+      }
+      std::cout << "Cycle " << ++cycle << ", " << vio_nets.size()
+                << " vio nets, " << vio_nodes.size() << " vio nodes."
+                << std::endl
+                << std::endl;
+    }
   }
 };
 
