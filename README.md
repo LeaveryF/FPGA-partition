@@ -5,11 +5,16 @@
 第六届中国研究生创‘芯’大赛·EDA设计精英挑战赛  
 赛题三 考虑逻辑复制的超图分割算法设计  
 个人分支(完全未使用该分支) 基于mt-kahypar划分器(仅使用其划分结果)(放心公开)  
+mt-kahypar github: https://github.com/kahypar/mt-kahypar  
+主要划分工作由它完成  
 参赛结果: 初赛-10/22提交9/11晋级 决赛-三等奖(和该分支完全无关)
 
-该分支目前unfinished 仅个人试验
+该分支目前unfinished 且仅为个人试验
 
-相关网址见该readme最后
+赛事主页: https://eda.icisc.cn/  
+比赛章程: https://edaoss.icisc.cn/file/cacheFile/341059ff8d644eeda0cd9e10f4be298c.pdf  
+赛事通知: https://edaoss.icisc.cn/file/cacheFile/2024/8/1/3c195cf624de44819600d52631169662.pdf  
+赛题三(本赛题): https://edaoss.icisc.cn/file/cacheFile/2024/8/7/745d61a664f54d4989de711dc04ff473.pdf  
 
 ## 项目构建
 
